@@ -1,0 +1,1287 @@
+
+\part{5}
+
+\section{Learning theory}
+
+We've gone through an informal discussion of bias/variance and overfitting.
+Now, lets now try to quantify exactly what some of these things mean,
+and actually prove conditions under which we can guarantee that our learning
+algorithms will work.  
+%(Exactly what we mean by ``will work'' is something to be established.)  
+In doing so, we will see that the key step will be to relate training
+error to the generalization error.  
+
+\subsection{Preliminaries}
+
+To get us started, lets first state two simple lemmas that will be very useful
+later.
+
+\noindent
+{\bf Lemma.} (The union bound).  Let $A_1, A_2, \ldots, A_k$ be $k$ different
+events (that may not be independent).  Then  
+\[
+P(A_1 \cup \cdots \cup A_k) \leq P(A_1) + \ldots + P(A_k).
+\]
+
+\noindent
+{\bf Lemma.} (Chernoff-Hoeffding inequality)  Let $X_1, \ldots, X_m$ be $m$
+independent and identically distributed (iid) random variables drawn from
+a Bernoulli($\mu$) distribution.  I.e., $P(X_i = 1) = \mu$, and $P(X_i=0) = 1-\mu$. 
+Let $\muhat = (1/m) \sum_{i=1}^m X_i$ be the mean of these random variables,
+and let any $\gamma > 0$ be fixed.  Then 
+\[
+P(|\mu - \muhat| > \gamma) \leq 2 \exp(-2\gamma^2 m)
+\]
+
+In probability theory, the union bound is usually stated as an axiom
+(and thus we won't try to prove it), but it also makes intuitive sense: The probability of 
+any one of $k$ events happening is at most the sums of the probabilities of the $k$
+different events.  (In class we also drew a Venn diagram showing events $A_1$ 
+and $A_2$, showing why this should intuitively be the case.)  The second lemma says
+that if we take $\muhat$---the average of $m$ Bernoulli($\mu$) random variables---to
+be our estimate of $\mu$, then the probability of our being far from the true
+value is small, so long as $m$ is large.  Another way of saying this is that if you
+have a biased coin whose chance of landing on heads is $\mu$, then if you toss it $m$
+times and calculate the fraction of times that it came up heads, that will 
+be a good estimate of $\mu$ with high probability (if $m$ is large).
+
+Using just these two simple lemmas, we will be able to prove some
+of the deepest and most important results in learning theory.  
+
+To simplify our exposition, lets restrict our attention to binary classification (so $t=0$ or $1$). 
+Lets also assume we are given a training set $\{(x[1], t[1]),\ldots, (x[m], t[m])\}$ of size $m$, 
+where the training examples $(x[i], t[i])$ are drawn iid from 
+some probability distribution ${\cal D}$.
+For a hypothesis $h$, we define the training error (also called the empirical
+error in learning theory) to be 
+\[
+\ehat(h) = \frac{1}{m}\sum_{i=1}^m 1\{h(x[i]) \neq t[i]\}.
+\]
+This is just the fraction of training examples that $h$ misclassifies (and is $1/m$ times
+our earlier definition of $E$).  We also define the generalization error to be
+\[
+\epsilon(h) = P_{(x,t)\sim {\cal D}}(h(x) \neq t).
+\]
+I.e. this is the probability that, if we now draw a new example $(x,t)$ from the distribution 
+${\cal D}$, $h$ will misclassify it.  Our learning algorithms generally try to minimize
+$\ehat(h)$ (or something close to $\ehat(h)$).  When will that lead to small 
+generalization error $\epsilon(h)$?  
+
+\subsection{The case of finite $H$}
+
+Lets start by considering a learning problem in which we have a finite hypothesis 
+class $H = \{h_1, \ldots, h_k\}$ consisting of $k$ hypotheses.  One reasonable 
+learning algorithm would be the one that picks the hypothesis $\hhat$ that minimizes 
+the training error: 
+\[
+\hhat = \arg \min_{h \in H}\ehat(h).
+\]
+What can we say about the generalization error of $\hhat$?  
+Our strategy will be to show two things: First, that $\ehat(h)$ will be a
+reliable estimate of $\epsilon(h)$ for all $h$; and second, that this implies
+an upper-bound on the generalization error of $\hhat$. 
+
+Take any one, fixed $h_i \in H$.  Consider a Bernoulli random variable $X$ whose 
+distribution is defined as follows.  We're going to sample $(x, t) \sim {\cal D}$.  
+Then, we set $X = 1\{h_i(x) \neq t\}$.  I.e., we're going to draw one example, 
+and let $X$ indicate whether $h$ misclassifies it.  We then see that 
+the misclassification probability---$\epsilon(h)$---is exactly the expected value of 
+$X$, and moreover, that the training error---$\ehat(h)$---is exactly the mean of
+$m$ Bernoulli random variables $X_i$ drawn from this distribution (since we had $m$ training
+examples, and then took $\ehat(h)$ to be the fraction of misclassified examples/the
+fraction of $X_i$'s that were 1).  Applying the Chernoff-Hoeffding inequality, this
+therefore tells us that
+\[
+P(|\epsilon(h_i) - \ehat(h_i)| > \gamma) \leq 2\exp(-2\gamma^2m)
+\]
+
+This shows that, for out particular $h_i$, training error will be close
+to generalization error with high probability, assuming $m$ is large. 
+But we don't just want to guarantee that $\epsilon(h_i)$ will be close to $\ehat(h_i)$ (with
+high probability) for just out particular $h_i$.  We want to prove that this will be true
+for simultaneously for \emph{all} $h \in H$.  To do so, let $A_i$ denote the event that 
+$|\epsilon(h_i) - \ehat(h_i)| > \gamma$.  Using the union bound, we have
+that
+\begin{eqnarray*}
+P(\exists\, h \in H. |\epsilon(h_i) - \ehat(h_i)| > \gamma)
+&=& P(A_1 \cup \cdots \cup A_k) \\
+&\leq& \sum_{i=1}^k P(A_i) \\ 
+&\leq& \sum_{i=1}^k 2\exp(-2\gamma^2m)\\
+&=& 2k\exp(-2\gamma^2m)
+\end{eqnarray*}
+If we subtract both sides from 1, we find that 
+\begin{eqnarray*}
+P(\neg \exists\, h \in H. |\epsilon(h_i) - \ehat(h_i)| > \gamma) 
+&=& P(\forall h \in H. |\epsilon(h_i) - \ehat(h_i)| \leq \gamma) \\
+&\geq& 1-2k\exp(-2\gamma^2m)
+\end{eqnarray*}
+I.e. that with probability at least $1-2k\exp(-2\gamma^2m)$, we have that
+$\epsilon(h)$ will be within $\gamma$ of $\ehat(h)$ for all $h \in H$.  This is
+called a \emph{uniform convergence} result, because this is a bound that holds
+simultaneously for all (as opposed to just one) $h \in H$.
+
+What we've done is, for particular values of $m$ and $\gamma$, given a bound on
+the probability that, for some $h \in H$,  $|\epsilon(h) - \ehat(h)| > \gamma$.
+We
+can ask a different question: Given $\gamma$ and some $\delta > 0$, how large must $m$
+be before we can guarantee that with probability at least $1-\delta$, training
+error will be within $\gamma$ of generalization error? 
+By setting $\delta = 2k\exp(-2\gamma^2m)$ and solving for $m$,
+[you should convince yourself this is the right thing to do!], 
+we find that if 
+\[
+m \geq \frac{1}{2\gamma^2} \log \frac{2k}{\delta},
+\]
+then with probability at least $1-\delta$,  we have that $|\epsilon(h) - \ehat(h)| \leq \gamma$ 
+for all $h \in H$.  (Equivalently, that the probability that 
+$|\epsilon(h) - \ehat(h)| > \gamma$ for some $h \in H$ is at most $\delta$.)
+
+The important thing to note is that the number of training examples we need to make
+this guarantee is only \emph{logarithmic} in $k$, the number of hypotheses in $H$.  This will
+be important later. 
+
+Finally, we can also hold $m$ and $\delta$ fixed and solve for $\gamma$ 
+in the previous equation, 
+and show [again, convince yourself that this is right!] that with probability $1-\delta$, we 
+have that for all $h \in H$, 
+\[
+|\ehat(h) - \epsilon(h)| \leq \sqrt{\frac{1}{m}\log\frac{2k}{\delta}}
+\]
+
+Now, lets assume that uniform convergence holds, i.e., that 
+$|\epsilon(h) - \ehat(h)| \leq \gamma$ for all $h \in H$.  What can we prove about
+the generalization of our learning algorithm that picked, say, $\hhat = \arg \min_{h \in H}\ehat(h)$?
+Define $\hstar = \arg \min_{h \in H} \epsilon(h)$ to be the best possible hypothesis in $H$.  
+Note that $\hstar$ is the best that we could possibly do given that we are using $H$, so it
+makes sense to compare our performance to that of $\hstar$. We have:
+\begin{eqnarray*}
+\epsilon(\hhat) &\leq& \ehat(\hhat) + \gamma  \\
+&\leq& \ehat(\hstar) + \gamma  \\
+&\leq& \epsilon(\hstar) + 2\gamma  
+\end{eqnarray*}
+The first line used the fact that $|\epsilon(\hhat) -\ehat(\hhat)| \leq \gamma$ (by our uniform
+convergence assumption). The second used the fact that $\hhat$ was chosen to minimize $\ehat(h)$,
+and hence $\ehat(\hhat) \leq \ehat(h)$ for all $h$, and in particular
+$\ehat(\hhat) \leq \ehat(\hstar)$.  The third line used the uniform convergence assumption again,
+to show that $\ehat(\hstar) \leq \epsilon(\hstar) + \gamma$.  Note 
+what we've shown: That if uniform convergence 
+takes place, then the generalization error of $\hhat$ is at 
+most $2\gamma$ worse than the best possible hypothesis in $H$!
+
+Lets put all this together into a theorem.
+
+\noindent
+{\bf Theorem.}  Let $|H| = k$, and let any $m, \delta$ be fixed.  Then with probability
+at least $1-\delta$, we have that 
+\[
+\epsilon(\hhat) \leq \left( \min_{h \in H} \epsilon(h) \right) + 2 \sqrt{\frac{1}{m}\log\frac{2k}{\delta}}.
+\]
+
+This is proved by letting $\gamma$ equal the $\sqrt{\cdot}$ term, using our previous argument
+that uniform convergence occurs with probability at least $1-\delta$, and 
+then noting that uniform convergence implies $\epsilon(h)$ is at 
+most $2\gamma$ higher than $\epsilon(\hstar) = \min_{h \in H} \epsilon(h)$ 
+(as we showed previously).  
+
+This also quantifies what we were saying previously saying about the bias/variance tradeoff in model
+selection.  Specifically, suppose we have some hypothesis class $H$, and are considering switching to
+some much larger hypothesis class $H' \supseteq H$.  If we switch to $H'$, then the first term 
+$\min_h \epsilon(h)$ can only decrease (since we'd then be taking a min 
+over a larger set of functions).  Hence,
+by learning using a larger hypothesis class, our ``bias'' can only 
+decrease.  However, if k increases, then the second $2\sqrt{\cdot}$ term 
+would also increase.  This increase corresponds to our ``variance'' increasing
+when we use a larger hypothesis class.
+
+By holding $\gamma$ and $\delta$ fixed and solving for $m$ like we
+did before, we can also obtain the following alternative form of the
+theorem:
+
+\noindent
+{\bf Corollary.} Let $|H|=k$, and let any $\delta, \gamma$ be fixed.  Then for
+$\epsilon(\hhat) \leq \min_{h \in H} \epsilon(h) + 2 \gamma$ to hold with probability at least $1-\delta$,
+it suffices that 
+\begin{eqnarray*}
+m &\geq& \frac{1}{2\gamma^2}\log\frac{2k}{\delta}\\
+  &=& O\left(\frac{1}{\gamma^2}\log\frac{k}{\delta}\right),
+\end{eqnarray*}
+
+
+\subsection{The case of infinite $H$}
+
+We have proved some useful theorems for the case of finite hypothesis 
+classes, but as we saw, most of our
+hypothesis classes (such as with neural networks) actually contain an infinite number of functions.
+Can we prove similar results for this setting?  
+
+Lets start by going something that is \emph{not} the ``right'' argument.
+\emph{Better and more general arguments exist}, but this will be useful for 
+honing our intuitions about the domain.  
+
+Suppose we have an $H$ that is parameterized by $d$ real numbers.  Since we are using a computer to
+represent real numbers, and IEEE double-precision floating point ({\tt double}'s in C) use 64 bits
+to represent a floating point number, this means that our learning algorithm, assuming we're using
+double-precision floating point,  is parameterized by $64d$ bits.  Thus, our hypothesis class
+really consists of at most $k=2^{64d}$ different hypotheses.  From the Corollary at the end of the
+previous section, we therefore find that, to guarantee 
+$\epsilon(\hhat) \leq \epsilon(\hstar) + 2 \gamma$, with to hold with probability at least $1-\delta$,
+it suffices that 
+$m \geq O\left(\frac{1}{\gamma^2}\log\frac{2^{64d}}{\delta}\right)
+= O\left(\frac{d}{\gamma^2}\log\frac{1}{\delta}\right)
+= O_{\gamma,\delta}(d)$.  (The $\gamma,\delta$ subscripts are to indicate that the last big-$O$ is hiding constants that may 
+depend on $\gamma$ and $\delta$.)  Thus, the number of training examples needed is at most \emph{linear}
+in the parameters of the model. 
+
+The fact that we relied on 64-bit floating point makes this argument not entirely satisfying, 
+but the conclusion is nonetheless roughly correct: If what we're going to do is try to minimize training error,
+then in order to learn ``well'' using a hypothesis class that has $d$ parameters, generally we're
+going to need on the order of a linear number of training examples in $d$. 
+
+(Note that there're also learning algorithms that are very different from the ones we've seen so far, 
+and in particular do not try to minimize training error.  Some of these algorithms, such as support vector
+machines (SVMs), might require far fewer training examples that $O(d)$, but we won't have time to cover them 
+in this class.)
+
+The other part of this argument that's slightly unsatisfying is that 
+it relies on the parameterization of $H$.  
+Intuitively, this doesn't seem like it should matter: The class of perceptrons can be written
+$h(x) = 1\{w_0 + w_1 x_1 + \cdots w_n x_n \geq 0\}$ with $n+1$ parameters $w_0, \ldots, w_n$.  
+Or, it can be written 
+$1\{(u^2_0 - v^2_0) + (u^2_1 - v^2_1) x_1 + \cdots (u^2_n - v^2_n) x_n \geq 0\}$ with $2n+2$ parameters $u_i, v_i$. 
+But both of these are just defining the same $H$: The set of linear classifiers in $n$ dimensions. 
+
+To derive a more satisfying argument, lets define a few more things.
+
+Given a set $S = \{x[1], \ldots, x[d]\}$, we say that $H$ \emph{shatters} $S$ if $H$ can realize any
+labeling on $S$. I.e., if for any set of labels $\{t[1], \ldots, t[d]\}$,
+there exists
+some $h \in H$ so that $h(x[i]) = t[i]$ for all $i=1,\ldots d$. 
+
+Given a hypothesis class $H$, we then define its Vapnik-Chervonenkis dimension, ${\rm VC}(H)$, to be the
+size of the largest set that is shattered by $H$.  (If $H$ can shatter arbitrarily large sets, then 
+${\rm VC}(H) = \infty$.)
+
+For instance, the set $H$ of perceptrons in two dimensions ($h(x) = 1\{w_0 + w_1 x_1 + w_2 x_2\geq 0 \}$) can shatter a 
+set of 3 points.   
+\fig{Perceptron examples} 
+Moreover, it is possible to show that there is no set of 4 points that it can shatter.  Thus, ${\rm VC}(H)=3$. 
+You'll get to practice with more VC-dimension examples in the exercise set.  
+
+The following theorem, due to Vapnik, can then be shown.  (This is, arguably, the most important
+theorem in all of learning theory.) 
+
+\noindent
+{\bf Theorem.}
+Let $H$ be given, and let $d = {\rm VC}(H)$.  Then with probability at least $1-\delta$, we
+have that for all $h \in H$, 
+\[
+|\epsilon(h) - \ehat(h)| \leq O\left(\sqrt{\frac{d}{m}\log\frac{m}{d} + \frac{1}{m}\log\frac{1}{\delta}}\right)
+\]
+Thus, with probability at least $1-\delta$, we also have that:
+\[
+\epsilon(\hhat) \leq \epsilon(\hstar) + O\left(\sqrt{\frac{d}{m}\log\frac{m}{d} + \frac{1}{m}\log\frac{1}{\delta}}\right)
+\]
+
+In other words, if a hypothesis class has finite VC dimension, 
+then uniform convergence occurs as $m$ becomes large.  
+As before, 
+this allows us to give a bound on $\epsilon(h)$ in terms 
+of $\epsilon(\hstar)$.  We also
+have the following corollary:
+\smallskip
+\noindent
+{\bf Corollary.}  For $|\epsilon(h) - \ehat(h)| \leq \gamma$ to hold for all $h \in H$ 
+(and hence $\epsilon(\hhat) \leq \epsilon(\hstar) + 2\gamma$) with probability at least $1-\delta$, 
+it suffices that $m = O_{\gamma,\delta}(d)$. 
+\smallskip
+
+In other words, the number of training examples needed to learn ``well'' using $H$ is linear 
+in the VC dimension of $H$.  It turns out that, for ``most'' hypothesis classes, the VC dimension
+(assuming a ``reasonable'' parameterization) is also roughly linear in the number of parameters. 
+Putting these together, we conclude that (for an algorithm that 
+tries to minimize training error) the number of training 
+examples needed is usually roughly linear in the number of parameters of $H$.
+
+\part{Unsupervised learning}
+
+To close off our discussion of machine learning, lets look at a different form of 
+learning than what we have so far.  In supervised learning, the data
+we're given has labels, and we're asked to discover the relationship between
+the inputs $\bx$'s and the labels $t$.  In the unsupervised learning setting, 
+the problem is very different.  Here, we are given
+only $\bx$'s, and asked to discover relationships between the $\bx$'s, or more
+broadly, to discover patterns in the data.
+
+Often, the supervised/unsupervised distinction isn't entirely clear (for instance,
+one exciting area of research these days is in ``semi-supervised'' learning, in which
+we are given labels to only part of our training set), and the term  ``unsupervised 
+learning'' actually covers a very broad set of problems and algorithms.  In this
+class, we're only going to look at one simple algorithm for what is probably the 
+simplest unsupervised learning problem: clustering.  
+
+\section{The K-means algorithm}
+
+In the clustering problem, we're given a dataset $\{x[1], x[2], \ldots, x[m]\}$, and 
+it is our task to group them in some way into a small number of classes.  The K-means
+algorithm is a simple algorithm that does this.  More specifically, suppose 
+each $x[i] \in \Re^n$, and we want to find $k$ clusters.  The K-means algorithm
+does the following:
+
+\begin{enumerate}
+\item Initialize the $k$ ``cluster centroids'' $\mu_1, \ldots, \mu_k \in \Re^n$ randomly.  
+(E.g., the most common method is to set each $\mu_i$ to equal a randomly chosen $x[j]$.) 
+\item Repeat until convergence: 
+\begin{enumerate} 
+\item For each $x[i]$, set $c(i) = \arg \min_{j=1,\ldots,k} ||x[i] - \mu_j||_2$.
+(Here, $||\cdot||_2$ denotes the usual Euclidean distance; e.g., 
+$||z||_2 = \sqrt{\sum_i z_i^2}$). 
+\item For each $i=1,\ldots,k$, set
+\begin{eqnarray*}
+\mu_j &:=& \frac{\sum_{i=1}^m 1\{c(i)=j\}x_i}{\sum_{i=1}^m 1\{c(i)=j\}} \\
+      &=& \frac{\sum_{i : c(i) = j} x_i}{\#\{i : c(i) = j\}}
+\end{eqnarray*}
+\end{enumerate}
+\end{enumerate}
+
+Thus, the iterative part of the algorithm consists of two steps: In the first, we 
+``assign'' each point to the closest cluster centroid.  In the second, we 
+set each cluster centroid to be the mean of all the points assigned to it.
+
+\fig{K-means demo}
+
+An exercise set problem asks you to prove that this algorithm is actually trying
+to minimize an objective function called the distortion function, and the programming
+problem in PS4 lets you play with applying K-means to compression.  (When K-means is
+used to select a small number of cluster centroids with which to compress the data,
+as in the problem set, it is also called vector quantization.)
+
+Simple clustering algorithms like this have surprisingly many applications.  One 
+standard application is to cluster data so as to make it more understandable to 
+humans.  Market segmentation (clustering customers into a small number of groups, 
+so that you can understand your customers better, and, e.g., target each group separately 
+in your marketing plan), is one standard example of this.  Lets also look another example 
+in which the data to be clustered consists of a set of text documents.  We see that 
+the clusters found capture surprisingly well different semantic meanings of the 
+word ``star.'' \fig{Text clustering examples (Karger and Hearst)}
+
+Another interesting application of clustering is image segmentation, in which we take an image
+and break it down into smaller ``pieces'' to make it easier for automatic algorithms
+to reason about what's in the image.  
+\fig{Image segmentation}
+
+Using K-means to segment an image and then using features of the segmented images
+as inputs to a neural network, Heisele and Woehler (1998), also created a very 
+simple algorithm for detecting pedestrians in an image sequence. 
+\fig{Pedestrian-detection demo}
+
+
+
+\end{document}
+\part{Reinforcement learning} 
+
+
+\section{Reinforcement Learning}
+Supervised learning is the simplest and best-studied type of learning, but
+it is far from being the only one.  Another type of learning task is
+learning behaviors when, unlike in Alvinn, we don't have a teacher to tell
+us how.  Rather, the agent has a task to perform; it takes some actions in
+the world, and then (at some point) gets feedback telling it how well it did
+in performing the task. The agent performs the same task over and over
+again.  As it gets carrots for good behavior and sticks for bad behavior, it
+figures out which is good and which is bad.  Animals do this all the time.
+Even very simple creatures (fruitflies) can be trained to go to one side or
+another based on where they get food.  The whole rat-maze industry is based
+on positive and negative reinforcements. 
+
+This type of learning is called {\em reinforcement learning}, because the
+agent gets positive reinforcement for tasks done well, and negative
+reinforcement for tasks done poorly.
+
+We've already briefly mentioned one example of RL, in game playing systems.
+Positive reinforcement is winning the game.  There are many other examples.
+Imagine trying to teach Alvinn to drive not via supervised learning, i.e.,
+by seeing what a human does, but by reinforcements.  Going off the road is a
+negative reinforcement; getting to the end of the road is a positive
+reinforcement.  Many robot control tasks --- e.g., parking a car --- are
+best done via reinforcement learning, simply because writing the controller
+is very difficult.
+
+Reinforcement learning can be formalized via a state space $S$ and a set of 
+actions, where we want to learn which action to take at every state in the
+space.  At the end of the scenario, we get some reward, which can be positive
+or negative.  We want the agent to learn how to behave in the environment,
+i.e., a mapping from states to actions.  For example, the configuration of
+the car might be the state, and we want to learn a steering action for each
+state.  
+
+The first thing to figure out in doing reinforcement learning is what is the
+function that we are trying to learn.  Here, we have two obvious options.
+One is to learn policies directly, i.e., a function from states to actions.
+Indeed, one line of work in reinforcement learning uses this idea.  As
+usual, we convert it into an optimization task:  Our search space is the
+space of policies, and the cost function is how well an agent using that
+policy does in the environment.  As usual, we often use a greedy search
+method, where we start out with one policy, and then make small changes to
+it that improve the performance.  
+
+In a game, our policy mapping might take features in the game state, 
+and produce the action to take.  We would adapt the policy parameters
+so as to optimize the ``expected'' payoff that this policy gets in the game.
+Unfortunately, there is an obvious problem with this approach.  To update our
+policy in the search, we have to evaluate each possible successor, i.e.,
+small change to our policy.  It is not clear how we would do that except by
+running the game lots and lots of times, and computing the average score.
+This is expensive.  And having evaluated each successor, we use our
+information only to pick one of them, throwing away all the rest of it.
+Thus, this approach (at least in this naive implementation) makes very poor
+use of the data.
+
+A different approach is based on the fact that we can choose moves by having
+a heuristic evaluation function, and acting optimally relative to that
+function.  The heuristic evaluation function is a mapping from states to
+values, that tells us how good each state it, i.e., what is the ``expected
+payoff'' that I get at that state.  Note that if I knew the
+``true value'' of each state $s$, i.e., the value I get if I act optimally
+from then on, then I could act optimally simply by taking the greedy move at
+each step.  In general, even with a ``suboptimal'' heuristic function, we
+can use it to act using the standard game playing techniques.
+
+Consider the problem of learning a heuristic function 
+\[
+  h(s) = w_1 x_1(s) + \ldots + w_n x_n(s)
+\]
+where each $x_i(s)$ is some feature of the state (e.g., number of pawns,
+security of the king in chess, etc.).  
+
+This is very similar to our linear threshold function from before.  The only
+difference is that we are not trying to fit a binary classifier, i.e., a
+function that gets 0,1 values, but rather a function that takes arbitrary
+real values.  Therefore, as we discussed above, at the last layer we
+replace the sigmoid activation function by a linear activation function,
+which gives us exactly the function above.
+
+Now, assume that we had a magic oracle that told us what the ``true value'' $v$
+is at a state $s$, i.e., the value of the game.  We can take that as
+training data, and adapt our weights to reflect that.  The derivation is
+identical to the one we used above.  Our training instance is
+$(x_1(s),\ldots,x_n(s),v)$, and our gradient descent rule gives us
+\[  
+  w_i  \leftarrow w_i + \gamma \cdot x_i(s) \cdot (v - h_{\myw}(s))
+\]
+where $h_{\myw}(s)$ is our current prediction of the value of $s$ given our 
+current weight vector.
+
+The problem, of course, is that we don't know the value $v$.  That's exactly
+what we are trying to learn.  (This is what distinguishes reinforcement
+learning from supervised learning.)  Now, we can use a very elegant
+bootstrapping trick, which we'll see several times. 
+
+We'll start with some initial estimate for our value function, which might
+be quite bad.  Thus, $h(s)$ at the current state $s$ will be very
+inaccurate.  However, we can use that to play the game by taking one step,
+and letting our opponent play one step.  Let $s'$ be the state reached after
+these two steps.  Even if our weights are bad, the value $h_{\myw}(s')$ is a
+better estimate than $h(s)$ for how good $s$ really was, because it takes
+into consideration more information.  Thus, we would like to adapt
+$h_{\myw}(s)$ to be closer to $h_{\myw}(s')$.  In other words, we use $v =
+h_{\myw}(s')$ as our training data for training the weights at $s$, and then
+apply precisely the learning rule shown above.
+
+This gives us the following algorithm.  We start out with some heuristic
+function $h_{\myw}$, and then repeat:
+\bitem
+\item
+We use our current heuristic function $h_{\myw}$ with some minimax (or
+alpha-beta) search to pick an action.
+\item
+We play that action, and let the other player respond.
+\item
+Let $s'$ be the state we end up in.  We define $v = h_{\myw}(s')$, and then
+train $\myw$ to get $h_{\myw}(s)$ to be closer to $v$.
+\eitem
+
+Note that this same algorithm applies not just to linear heuristic functions
+but also to ones represented as neural networks.
+
+This technique has many applications.  Let us look at an example in the
+context of robotics: 
+
+\fig{Robot learning video}
+
+Here, the states are the states of the robot, and the actions are the
+different actions the robot can take.  The robot learns a heuristic
+evaluation function of the different states.  It estimates the value of each 
+successor state, and takes the action that leads to the highest value
+successor. 
+
+This technology has an even longer history in the context of game playing.
+As I mentioned, the very first learning program, of any type, was Samuel's
+Checkers playing program.  It also played a key role in TD-Gammon, where the
+branching factor is so high as to make search almost impossible.  By
+learning the heuristic evaluation function by self-play, TD-Gammon learned
+to play at championship level even without search.
+
+\end{document}
+\section{Unsupervised learning}
+
+Supervised learning is the simplest and best-studied type of learning, but
+it is far from being the only one.  For example, there is {\em unsupervised
+learning}.  In unsupervised learning, the final task is the same:  We
+have a new data case, which is an assignment of values to relevant features,
+and our goal is to classify the case as belonging to one class or another. 
+Unfortunately, in our training data, no-one was kind enough to tell us the
+classes for the cases we've already seen.  I.e., we have to figure out the
+classes for ourselves.  
+
+Here, the basic idea is to discover clusters in the data.  For example, if
+we have two real-valued features, and the data cases look like this:
+
+\cpsf{figure=Figures/clusters.eps,height=2in,angle=270}
+
+we all feel that there are three clusters in the data, in the obvious way.
+The goal of a clustering algorithm is to find them.  Unfortunately, what a
+cluster is becomes much less obvious when we have lots of features and they
+are discrete.
+
+Note that this can also be viewed in the same framework of learning a
+function.  That is, given any point (in the training data or the test
+data) we want to classify it into one cluster or another.  I.e., this
+is just a classification task.  The main problem is that, in our
+training data, no-one is telling us {\em how\/} each training instance
+should be classified.
+
+It turns out that this intuition is also the basis for a solution.
+Assume that someone were to give me classes (clusters) for the
+training data; i.e., if someone were to tell me that all of these
+points belong in class 1, all these others in class 2, etc.  Then, we
+could simply run a supervised learning algorithm which would figure
+out how to classify any point.  Once we have learned such a
+classifier, we could now classify any point into one cluster or
+another.  
+
+Unfortunately, we don't have the classes.  So what we'll do is the
+following.  We'll pretend we do, simply by picking a random cluster
+for each point.  We'll then pretend that these classes are real, and
+learn a classifier.  We now take our training data, and forget the
+old classes.  We use our learned classifier to figure out where they
+belong.  Usually, we'll decide that some of the points are best
+classified in a different cluster.  That gives us a new
+categorization, which we now use in the next step of the algorithm.
+
+Let's make this type of algorithm concrete in the context of the
+simplest of these algorithms, called k-means.  It works on numerical
+data in $\IR^n$.  In this algorithm, the classifier used is very
+simple.  It keeps a set of means $\bmu^1,\ldots,\bmu^k \in \IR^n$.
+Then, for each point $\bx \in \IR^n$, it classifies it in the class
+$i$ for which the distance between $\bx$ and $\bmu^i$ is closest.
+
+To learn a classifier given a set of supervised data, what do we do?
+We simply choose the mean $\bmu^i$ to be the average of the samples in
+their class.  I.e., if our training data has the set $C^i$ as the set
+of points in class $i$, we compute 
+\[
+  \bmu^i = \frac{1}{n_i} \sum_{\bx \in C^i} \bx
+\]
+where $n_i$ is the number of points in $C^i$, and the sum is a
+component-wise vector sum.
+
+This is the basic classifier; now let's use it for clustering.
+
+Iterative algorithm:  We begin by classifying points into clusters randomly.
+Then, we repeat the following loop: 
+\bitem
+\item
+Let $C^i$ be the set of training instances classified as $i$.  Compute
+the cluster means $\bmu^i$ as the average of the points in $C^i$.
+\item
+For each point $\bx$ in our training set, place $\bx$ in the cluster
+$C^i$ for which $\bx$ is closest to $\bmu^i$.
+\eitem
+
+\fig{Nils slide}
+
+Note what we are doing in this algorithm.  We are turning an
+unsupervised learning problem into a supervised one, by inventing
+target values.  We then bootstrap off these invented values to
+converge to better and better hypotheses.  
+
+There is also a very useful probabilistic version of this classifier
+that divides each point into more than one cluster, proportionately to
+how likely it is to belong to the cluster.
+
+It is hard to believe that this simple algorithm does anything useful, but
+surprisingly it does.  Let's start by looking at it in the geometric context
+where it is most obviously applicable.
+
+\fig{\verb|http://www-cse.ucsd.edu/users/ibayrakt/em/|}
+
+In a real application, this type of algorithm has been applied to the domain
+of trying to find clusters of similar stellar objects using images from very
+faint telescopes, ones that are too faint for a human to deal with.
+
+\fig{Skicat article fig.6}
+
+The clustering algorithm discovered four categories, which made sense to
+astronomers.  For example, it correctly separated stars from galaxies.
+
+Even more surprisingly, the algorithm is also useful in much less obvious
+settings.  For example, it has been used for text clustering and 
+collaborative filtering. 
+
+In text clustering: MARS example.
+
+In collaborative filtering, we are trying to recommend new things to
+people that we think they'll like: new TV programs, books, websites,
+etc.  The idea is to cluster people into groups that seem to have
+similar tastes, and then recommend to a person things that other
+people in his cluster have liked.  In this case, each data point is
+defined as a large vector, corresponding to which people ``liked'' it
+and which people didn't.  We then cluster objects (e.g., TV programs)
+according to how similar these vectors are.  Here are two examples:
+  
+\fig{TV programs}
+
+Sometimes, we can even discover clusters that we didn't expect at all:
+
+\fig{MSNBC websites}
+
+
+\section{Unsupervised learning}
+Supervised learning is the simplest and best-studied type of learning, but
+it is far from being the only one.  For example, there is {\em unsupervised
+learning}.  In unsupervised learning, the final task is the same:  We
+have a new data case, which is an assignment of values to relevant features,
+and our goal is to classify the case as belonging to one class or another. 
+Unfortunately, in our training data, no-one was kind enough to tell us the
+classes for the cases we've already seen.  I.e., we have to figure out the
+classes for ourselves.  
+
+Here, the basic idea is to discover clusters in the data.  For example, if
+we have two real-valued features, and the data cases look like this:
+
+\cpsf{figure=Figures/clusters.eps,height=2in,angle=270}
+
+we all feel that there are three clusters in the data, in the obvious way.
+The goal of a clustering algorithm is to find them.  Unfortunately, what a
+cluster is becomes much less obvious when we have lots of features and they
+are discrete.
+
+Note that this can also be viewed in the same framework of learning a
+function.  That is, given any point (in the training data or the test
+data) we want to classify it into one cluster or another.  I.e., this
+is just a classification task.  The main problem is that, in our
+training data, no-one is telling us {\em how\/} each training instance
+should be classified.
+
+It turns out that this intuition is also the basis for a solution.
+Assume that someone were to give me classes (clusters) for the
+training data; i.e., if someone were to tell me that all of these
+points belong in class 1, all these others in class 2, etc.  Then, we
+could simply run a supervised learning algorithm which would figure
+out how to classify any point.  Once we have learned such a
+classifier, we could now classify any point into one cluster or
+another.  
+
+Unfortunately, we don't have the classes.  So what we'll do is the
+following.  We'll pretend we do, simply by picking a random cluster
+for each point.  We'll then pretend that these classes are real, and
+learn a classifier.  We now take our training data, and forget the
+old classes.  We use our learned classifier to figure out where they
+belong.  Usually, we'll decide that some of the points are best
+classified in a different cluster.  That gives us a new
+categorization, which we now use in the next step of the algorithm.
+
+Let's make this type of algorithm concrete in the context of the
+simplest of these algorithms, called k-means.  It works on numerical
+data in $\IR^n$.  In this algorithm, the classifier used is very
+simple.  It keeps a set of means $\bmu^1,\ldots,\bmu^k \in \IR^n$.
+Then, for each point $\bx \in \IR^n$, it classifies it in the class
+$i$ for which the distance between $\bx$ and $\bmu^i$ is closest.
+
+To learn a classifier given a set of supervised data, what do we do?
+We simply choose the mean $\bmu^i$ to be the average of the samples in
+their class.  I.e., if our training data has the set $C^i$ as the set
+of points in class $i$, we compute 
+\[
+  \bmu^i = \frac{1}{n_i} \sum_{\bx \in C^i} \bx
+\]
+where $n_i$ is the number of points in $C^i$, and the sum is a
+component-wise vector sum.
+
+This is the basic classifier; now let's use it for clustering.
+
+Iterative algorithm:  We begin by classifying points into clusters randomly.
+Then, we repeat the following loop: 
+\bitem
+\item
+Let $C^i$ be the set of training instances classified as $i$.  Compute
+the cluster means $\bmu^i$ as the average of the points in $C^i$.
+\item
+For each point $\bx$ in our training set, place $\bx$ in the cluster
+$C^i$ for which $\bx$ is closest to $\bmu^i$.
+\eitem
+
+\fig{Nils slide}
+
+Note what we are doing in this algorithm.  We are turning an
+unsupervised learning problem into a supervised one, by inventing
+target values.  We then bootstrap off these invented values to
+converge to better and better hypotheses.  
+
+There is also a very useful probabilistic version of this classifier
+that divides each point into more than one cluster, proportionately to
+how likely it is to belong to the cluster.
+
+It is hard to believe that this simple algorithm does anything useful, but
+surprisingly it does.  Let's start by looking at it in the geometric context
+where it is most obviously applicable.
+
+\fig{\verb|http://www-cse.ucsd.edu/users/ibayrakt/em/|}
+
+In a real application, this type of algorithm has been applied to the domain
+of trying to find clusters of similar stellar objects using images from very
+faint telescopes, ones that are too faint for a human to deal with.
+
+\fig{Skicat article fig.6}
+
+The clustering algorithm discovered four categories, which made sense to
+astronomers.  For example, it correctly separated stars from galaxies.
+
+Even more surprisingly, the algorithm is also useful in much less obvious
+settings.  For example, it has been used for text clustering and 
+collaborative filtering. 
+
+In text clustering: MARS example.
+
+In collaborative filtering, we are trying to recommend new things to
+people that we think they'll like: new TV programs, books, websites,
+etc.  The idea is to cluster people into groups that seem to have
+similar tastes, and then recommend to a person things that other
+people in his cluster have liked.  In this case, each data point is
+defined as a large vector, corresponding to which people ``liked'' it
+and which people didn't.  We then cluster objects (e.g., TV programs)
+according to how similar these vectors are.  Here are two examples:
+  
+\fig{TV programs}
+
+Sometimes, we can even discover clusters that we didn't expect at all:
+
+\fig{MSNBC websites}
+
+\section{Reinforcement learning}
+
+Yet another type of learning task is learning behaviors when, nunlike in
+Alvinn, we don't have a teacher to tell us how.  Rather, the agent has a
+task to perform; it takes some actions in the world, and then (at
+some point) gets feedback telling it how well it did in performing the task.
+The agent performs the same task over and over again.  As it gets carrots for
+good behavior and sticks for bad behavior, it figures out which is good and
+which is bad.  Animals do this all the time.  Even very simple creatures
+(fruitflies) can be trained to go to one side or another based on where they
+get food.  The whole rat-maze industry is based on positive and negative
+reinforcements. 
+
+This type of learning is called {\em reinforcement learning}, because the
+agent gets positive reinforcement for tasks done well, and negative
+reinforcement for tasks done poorly.
+
+We've already seen one example of RL: Othello.  Positive reinforcement is
+winning the game.  There are many other examples.  Imagine trying to teach
+Alvinn to drive not via supervised learning, i.e., by seeing what a human
+does, but by reinforcements.  Going off the road is a negative reinforcement;
+getting to the end of the road is a positive reinforcement.  Many robot
+control tasks --- e.g., parking a car --- are best done via reinforcement
+learning, simply because writing the controller is very difficult.
+
+Reinforcement learning can be formalized via a state space $S$ and a set of 
+actions, where we want to learn which action to take at every state in the
+space.  At the end of the scenario, we get some reward, which can be positive
+or negative.  We want the agent to learn a {\em policy\/}, i.e., a mapping
+from states to actions.  For example, the configuration of the car might be
+the state, and we want to learn a steering action for each state.
+This setting should be familiar; it is precisely a Markov decision process.
+Indeed, MDPs are the formal semantics for much of reinforcement learning.
+
+The first thing to figure out in doing reinforcement learning is what is the
+function that we are trying to learn.  Here, we have two obvious options.
+One is to learn policies directly, i.e., a function from states to actions.
+However, that's not how we solved MDPs or games.  Rather, we had a value or
+heuristic function, and we learned a function from states to values.  Once we
+had a value function, we knew how to act: we simply chose, at each state $s$,
+the actions $a$ that maximizes
+\[
+ \sum_s' P(s' \mid s,a) V(s')
+\]
+Similarly in games.
+
+Thus, we want to learn a value function.  Let's begin by simplifying the
+problem, as we did above.  Let's assume that we are only trying to learn
+$V(s)$ for some specific state $s^*$, where all other $V$ values are known.
+We know that 
+\[
+V(s^*) = max_a \sum_{s'} P(s' \mid s^*,a) V(s')
+\]
+Rather than estimating the value of this max directly, it is easiest to think
+about estimating separately the value obtained by taking each action $a$,
+i.e., 
+\[
+Q(s^*,a) = \sum_{s'} P(s' \mid s^*,a) V(s')
+\]
+The relation to $V(s^*)$ is easy; simply the max over $a$ of $Q(s^*,a)$. 
+
+Estimating $Q(s^*,a)$ is easy.  We run the process for a while,
+and get a sequence of observation $s,a,s'$, i.e., we were in state $s$, did
+action $a$, and landed in state $s'$.  Our estimate for $Q(s^*,a)$ is simply
+the long run average of $V(s')$ over training instances $s^*,a,s'$.  It turns
+out that we can easily maintain this long-run average by the following update
+rule:  For each such training instance $s^*,a,s'$, our training datum is $v =
+V(s')$.  We then do:
+\[
+  Q(s^*,a) := (1-\alpha) Q(s^*,a) + \alpha v.
+\]
+Or, in other words:
+\[
+  Q(s^*,a) := Q(s^*,a) + \alpha (v - Q(s^*,a))
+\]
+This should look very familiar\ldots.
+
+Note what we've done; we've turned the reinforcement learning task into a
+supervised learning task for $Q(s^*,a)$ by assuming that we know $V(s')$ for
+all other $s'$.  Of course, we don't have $V(s')$.  So, we'll use the same 
+bootstrapping trick that we used before.  We'll start with some bogus
+estimate for all of our $Q$ values, and thereby our $V$ values.  We'll assume
+that these bogus estimates are real, and take a step.  That gives us a new
+training instance $s,a,s'$.  We assume that $V(s')$ is correct, and use it to
+``train'' $Q(s,a)$, as described above.  We then continue.  Thus, we get the
+following rule.  For a learning instance $(s,a,s')$, we update
+\begin{eqnarray*}
+ Q(s,a) & := & Q(s,a) + \alpha (V(s') - Q(s,a)) \\
+ V(s)   & := & \max_a Q(s,a)
+\end{eqnarray*}
+This algorithm is called {\em Q-learning}.
+
+As above, we are learning from ``fake'' data.  In this case, however, we can
+actually prove that we are converging to the correct value function:
+\thm
+If each action is executed in each state an infinite number of  times,
+and $\alpha$ is decayed appropriately, then the $V$ values will
+converge to the correct value function $V^*$, yielding an optimal policy.
+\ethm
+
+Let's discuss this result.  On the one hand, it's very powerful.  It
+guarantees that, in this case, our bogus bootstrapping works.  Furthermore,
+it applies even in situations (unlike Othello) where we a priori know nothing
+about the model, i.e., not the transition probabilities, or even a complete
+list of states!  Thus, it allows an agent to wake up blind in a world, and
+learn to do OK in it.  (Assuming it doesn't die in the process.)
+
+However, it is also somewhat limited.  First, it only applies asymptotically,
+and only if we try every action (even very bad ones), infinitely often.
+It also leaves completely unresolved the question of which actions to try
+when.  Remember that the
+agent is not a passive entity.  It gets to try different actions $a$, in the
+hope of finding a good policy.  How does the agent pick an action $a$?
+The simple greedy approach is that the agent picks the action $a$ which
+currently has the highest $Q$ value.  What is the problem with that?  Maybe
+actions that I haven't tried so far are actually much better.  This leads to
+an important and difficult problem: exploration versus exploitation.  How
+much time and effort do I spend looking for better ways to do things, and how 
+much do I spend just going about my business in the best way I know how.
+This question doesn't have an easy answer.  There are several heuristic
+answers that people have come up with.  One interesting one is a random
+exploration policy.  I.e., pick the best action with high probability, but
+with low probability choose a random action.  We can make this more
+sophisticated by making the agent more likely to try promising actions.  
+
+Second, it doesn't hold in all settings.  It requires that we use a table
+representation for the value function, i.e., a separate number for each
+state.  In situations such as Othello, when we have many states, this is
+completely impractical.  We can't explore all states, far less store a value
+for each one.  In this representation, there is no generalization from state
+to state.  One important extension to the basic reinforcement learning
+framework is to use some function approximator --- linear function, neural
+network, etc. --- and learn some approximation to $Q$ or $V$.  However,
+if we start using (and learning) alternative representations of the value
+function, we lose the convergence guarantee.  Intuitively, if all of the
+states depend on the same set of parameters, then a parameter update
+that can improve the fit in one region of the space can make it worse
+in others.  In practice, cases like this do happen. However, without
+generalization most of the ``real'' reinforcement learning applications
+simply wouldn't work. 
+
+Some applications of reinforcement learning:
+
+\begin{verbatim}
+http://www-robotics.cs.umass.edu/video-gallery.html#thing_learn
+\end{verbatim}
+
+The earliest application of reinforcement learning techniques in AI
+was also the first machine learning application: Samuel's checkers
+playing program.  More recently, the same ideas were used by Tesauro
+in the context of Backgammon.  Backgammon has approximately $10^{20}$
+states, making table-based RL impossible.  Instead, Tesauro used a
+backpropagation-based one hidden layer neural network as a
+function approximation for the value function.  The first version of
+TD-Gammon used only raw features: for each board location, are there 0,1,2,3
+or more black/white pieces on that point.  The program trained by playing
+against itself for several months.  It achieved a level of performance
+comparable to a typical competent human player, but we beaten soundly by
+champions.   The second generation of the game added some
+hand-constructed features, e.g., piece count, race status, etc.
+With 80 hidden units, the program only lost 1 point in 40 in the
+championship, i.e., it is a human-level player.  It is interesting to note
+that RL is not universally useful in other games, e.g., Go or Chess (although
+it is in Othello).
+
+A two-armed robot learned to juggle a devil-stick.  This is a complex
+nonlinear control problem with a six-dimensional continuous state space and
+less than 200 msecs between control decisions.  After about 40 attempts, the
+robot was able to keep juggling for hundreds of hits.  This is much better
+than a human could achieve.
+
+A real example: Large-scale industrial packaging.
+Specifically, fitting the right amount of food into boxes or cans.
+There are lots of constraints: mean weight of containers must be above
+declared weight, number of containers below declared weight cannot be
+too large, etc.  Reinforcement for reducing overall food consumption.
+State descriptions contains product characteristics, the wastage so far, an
+the number of below-weight containers, etc.  Over 200,000 states.  In
+simulation, wastage was reduced by a factor of 10.  The system was deployed
+successfully in several factories. 
+
+\section{Reinforcement learning}
+MDPs are the formal framework for another, very interesting, type of
+learning task.  Here, our goal is to have the agent learn how to behave
+when, unlike in Alvinn, we don't have a teacher to tell us how.  Rather, the
+agent has a task to perform; it takes some actions in the world, and then (at
+some point) gets feedback telling it how well it did in performing the task.
+The agent performs the same task over and over again.  As it gets carrots for
+good behavior and sticks for bad behavior, it figures out which is good and
+which is bad.  
+%\private{Animals do this all the time.  Even very simple
+%creatures (fruitflies) can be trained to go to one side or another based on
+%where they get food.  The whole rat-maze industry is based on positive and
+%negative reinforcements. }
+
+This type of learning is called {\em reinforcement learning}, because the
+agent gets positive reinforcement for tasks done well, and negative
+reinforcement for tasks done poorly.
+
+We will soon see one very important example of RL: in game playing.
+Positive reinforcement is winning the game.  There are many other examples.
+Imagine trying to teach Alvinn to drive not via supervised learning, i.e.,
+by seeing what a human does, but by reinforcements.  Going off the road is a
+negative reinforcement; getting to the end of the road is a positive
+reinforcement.  Many robot control tasks --- e.g., parking a car --- are
+best done via reinforcement learning, simply because writing the controller
+is very difficult. 
+
+Reinforcement learning can be formalized very easily in the context of MDPs.
+Our goal is to get the agent to learn a policy even when it doesn't know the
+MDP.
+
+Alternative is to learn value functions.  Put this into familiar function
+approximation setting.  Is value function enough if the agent doesn't know
+the model?  How would a value function be used?
+\begin{quote}
+Choose $a$ that maximizes $R(s,a) + \gamma \sum_{s'} P(s' \mid s,a) V(s')$
+\end{quote}
+But the agent doesn't know the model, and so doesn't know the transition
+probabilities.  There are two solutions:
+\bitem
+\item
+It could learn the transition probabilities.  That leads to another approach
+to RL called {\em model-based}, where the agent learns the model and then
+does standard MDP planning, i.e., computes the value function relative to
+the learned model.
+\item
+Learn something that allows it to avoid the need for knowing the transition
+probabilities.  In particular, learn a {\em Q-function:}
+\[
+Q(s,a) = R(s,a) + \gamma \sum_{s'} P(s' \mid s,a) V(s')
+\]
+Here, $V(s) = \max_a Q(s,a)$, but the agent can choose an action directly
+based on $Q(s,a)$ and not on $V$.
+\eitem
+
+We will focus on the latter, because it will be useful to us in the game
+playing task, and because it will allow us to explore some interesting
+issues. 
+
+Let's first consider the problem of estimating a single $Q(s,a)$ value
+assuming we somehow magically have all of the other $V$'s.  In this case, we
+try $a$ at $s$ a bunch of times, and get to different states.  Each time we
+get to a state $s'$, we get a reward $r$ and a $v' = V(s')$ that is the
+value at the next state.  How do we use that to update our estimate
+of $Q(s,a)$?  If we just got $r$ and the value at the next state is $v'$, the
+agent actually gets $r + \gamma v'$.  We can view this as an example
+(instance) of the value of taking action $a$ at state $s$.  We want to learn
+the actual number from these instances.  One way of doing that is simply to
+minimize the sum, over the instances we see, of $1/2 (Q(s,a) - (r + \gamma
+v'))^2$, i.e., the standard squared error function.  In other words, we have
+turned the value-learning problem into a supervised problem, where we are
+using the value at the next state to define our target values.
+
+What learning rule would we get?  We would have a learning rate $\alpha$,
+and as we get new instances $s'$ with value $V(s')$, we would update:
+\[
+  Q(s,a) := Q(s,a) + \alpha (r + \gamma v' - Q(s,a)).
+\]
+This is very familiar.  
+
+The basis for the fact that we've turned the reinforcement learning task
+into a supervised learning task for $Q(s,a)$ is our assumption that we know
+$V(s')$ for all other $s'$.  Of course, we don't know $V(s')$.  Now, we can
+use a very elegant bootstrapping trick, which we'll see several times.
+
+We'll start with some bogus estimate for all of our $Q$ values, and thereby
+our $V$ values.  We'll assume that these bogus estimates are real, and take
+a step.  That gives us a new training instance $s,a,s'$.  We assume that
+$V(s')$ is correct, and use it to ``train'' $Q(s,a)$, as described above.
+We then continue.  Thus, we get the following rule.  For a learning instance
+$(s,a,s')$, we update 
+\begin{eqnarray*}
+ Q(s,a) & := & Q(s,a) + \alpha (r + \gamma V(s') - Q(s,a)) \\
+ V(s)   & := & \max_a Q(s,a)
+\end{eqnarray*}
+This algorithm is called {\em Q-learning}.
+
+Of course, all of the training values that we use to update the $Q$'s are fake.
+Surprisingly, despite this fact, we can actually prove that we are converging
+to the correct value function: 
+\thm
+If each action is executed in each state an infinite number of  times,
+and $\alpha$ is decayed appropriately, then the $V$ values will
+converge to the correct value function $V^*$, yielding an optimal policy.
+\ethm
+
+Let's discuss this result.  On the one hand, it's very powerful.  It
+guarantees that, in this case, our bogus bootstrapping works.  Furthermore,
+it applies even in situations where we a priori know nothing about the
+model, i.e., not the transition probabilities, or even a complete list of
+states!  Thus, it allows an agent to wake up blind in a world, and learn to
+do OK in it.  (Assuming it doesn't die in the process.) 
+
+However, it is also somewhat limited.  The primary difficulty is that it
+only applies if we try every action (even very bad ones), infinitely often.
+It also leaves completely unresolved the question of which actions to try
+when.  Remember that the agent is not a passive entity.  It gets to try
+different actions $a$, in the hope of finding a good policy.  How does the
+agent pick an action $a$?  The simple greedy approach is that the agent
+picks the action $a$ which currently has the highest $Q$ value.  What is the
+problem with that?  Maybe actions that I haven't tried so far are actually
+much better.  This leads to an important and difficult problem: exploration
+versus exploitation.  How much time and effort do I spend looking for better
+ways to do things, and how much do I spend just going about my business in
+the best way I know how. This question doesn't have an easy answer.  There
+are several heuristic answers that people have come up with.  One
+interesting one is a random exploration policy.  I.e., pick the best action
+with high probability, but with low probability choose a random action.
+%\private{(Related to the simulated annealing algorithm that we didn't talk
+%about.) } 
+We can make this more sophisticated by making the agent more
+likely to try promising actions.
+
+Another important issue is that this result requires that we learn a number
+for each $s$ and $a$.  In many situations, when we have many states, this is
+completely impractical.  We can't explore all states, far less get enough
+training instances to learn $Q(s,a)$.  How do we resolve this?  One idea
+is based on the insight that the value of a state might actually be
+represented reasonably well (although not exactly) as a function of some
+features of the state.  For example, in motion fields, we saw that you can
+define a pretty good value function based on features that correspond to the
+distances from the agent to goals and obstacles.  If this function has a
+form that holds for all states, then data about it that we gather in one
+state can be used to tell us about another.
+
+Specifically, we are going to consider certain features $x_1,\ldots,x_k$ of
+states.  (Also of actions if we have many actions, but let's ignore that.)
+For each state, the features $x_1,\ldots,x_k$ will take different values.  
+We can now define $Q(s,a)$ to be approximated by a function
+$q_a(x_1,\ldots,x_k)$ that has some particular functional form.  Most
+simply, we might decide to estimate $q_a(x_1,\ldots,x_k)$ as a linear
+function $w_0 + w_1 x_1 + \ldots + w_k x_k$.  
+
+How would we update the parameters for such a function?  The same metaphor
+of using supervised learning techniques applies.  As we roam the space, we
+get instances where we go from $s$ to $s'$ via $a$, getting a reward $r$.
+We then treat $r + \gamma V(s')$ as a supervised target for $Q(s,a)$, and
+update the weights.
+
+Let's be more precise.  Let $x^s_1,\ldots,x^s_k$ represent the vector of
+features associated with a state $s$.
+
+Having gotten our training instance $s,a,r,s'$, we first compute $v' =
+V(s')$ from  our current estimate of the $Q$ functions, i.e., 
+\[
+   v' = \max_a q_a(x^{s'}_1,\ldots,x^{s'}_k)
+\]
+Then, we define
+\[
+  v = r + \gamma v'
+\]
+Then, we treat $v$ as a supervised value for training the weights of the
+function $q_a$:
+\[
+  w_i := w_i + \alpha (v - q_a(x^s_1,\ldots,x^s_k)) 
+    \frac{\partial q_a}{\partial w_i}
+\]
+For a linear $q_a$, as above, the last term turns into $x^s_i$, as usual. If
+we use a neural network for $q_a$, it would be the term we compute in
+backprop. 
+
+Note that we are precisely minimizing the squared error:
+\[
+  \frac{1}{2} [q_a(x_1^s,\ldots,x_k^s) - v]^2
+\]
+as usual.
+
+This trick, of using a value function that allows us to generalize from
+data about states that we've seen to other parts of the space, is
+fundamental to getting reinforcement learning and MDPs in real-world
+domains.  However, we should keep in mind its two limitations:
+\bitem
+\item
+Unlike in MDPs and table-based RL, the value function is only an
+approximation to the optimal value function.
+\item
+Unfortunately, as you'll see in the problem set, our guarantees about
+convergence disappear in most cases.
+\eitem
+
+\subsection{RL}
+%Some applications of reinforcement learning:
+%
+%\begin{verbatim}
+%http://www-robotics.cs.umass.edu/video-gallery.html#thing_learn
+%\end{verbatim}
+
+The earliest application of reinforcement learning techniques in AI
+was also the first machine learning application: Samuel's checkers
+playing program.  More recently, the same ideas were used by Tesauro
+in the context of Backgammon.  Backgammon has approximately $10^{20}$
+states, making table-based RL impossible.  Instead, Tesauro used a
+backpropagation-based one hidden layer neural network as a
+function approximation for the value function.  The first version of
+TD-Gammon used only raw features: for each board location, are there 0,1,2,3
+or more black/white pieces on that point.  The program trained by playing
+against itself for several months.  It achieved a level of performance
+comparable to a typical competent human player, but we beaten soundly by
+champions.   The second generation of the game added some
+hand-constructed features, e.g., piece count, race status, etc.
+With 80 hidden units, the program only lost 1 point in 40 in the
+championship, i.e., it is a human-level player.  It is interesting to note
+that RL is not universally useful in other games, e.g., Go or Chess.
+% (although it is in Othello).
+
+RL is very useful for learning control mechanisms.  For example, a two-armed
+robot learned to juggle a devil-stick.  This is a complex nonlinear control
+problem with a six-dimensional continuous state space and less than 200
+msecs between control decisions.  After about 40 attempts, the robot was
+able to keep juggling for hundreds of hits.  This is much better than a
+human could achieve.  A robot also learned to walk.
+
+\fig{Toddler video (SciAm Frontiers)}
+
+A real example: Large-scale industrial packaging.
+Specifically, fitting the right amount of food into boxes or cans.
+There are lots of constraints: mean weight of containers must be above
+declared weight, number of containers below declared weight cannot be
+too large, etc.  Reinforcement for reducing overall food consumption.
+State descriptions contains product characteristics, the wastage so far, an
+the number of below-weight containers, etc.  Over 200,000 states.  In
+simulation, wastage was reduced by a factor of 10.  The system was deployed
+successfully in several factories. 
+
+BN Learning
+
+TB model
+
+Clustering
+\end{document}
+
+
+
+Are all ways of splitting
+attributes equally good?  On the one hand, they all completely agree with
+the training set.  However, not all are equally good.  For example,
+note that our tree above says that the student would eat anything
+that's cheap.  Assuming that the student actually uses the first tree
+we showed, there are instances that would be misclassified.
+
+How do we choose which attribute to split next?  Let us reconsider the
+eating example above, and assume we have already split on ``Hunger'' and
+``Like'', and are currently deciding how to split the node corresponding to
+``hungry'', ``no''.  The relevant samples are 3--6.  At this point, we would
+probably choose to split on ``Healthy'', because it seems to fully determine
+the outcome.
+
+The best attribute is easy to pick if one attribute determines things
+completely.  What about more complex situations?  For example, assume
+that we have 100 samples at a node, of which 60 are classified $yes$ and 40 are
+classified $no$.  If we split on $A$, we get (10,30) and (50,10).  If we
+split on $B$, we get (40,15) and (20,25).  It seems obvious that we would
+rather split on $A$.  But how do we formalize that?
+
+The key is to consider how ``random'' a distribution is, i.e., how
+close it is to being 50\%--50\%.  There is a mathematically sound
+technique (from information theory) to formalize the intuition of how
+random a distribution is.  Assume we have $p$ positive samples and $n$
+negative samples, then the distribution is $x,1-x$ for $x=p/(p+n)$.
+The amount of noise (entropy) in a distribution is defined to be: 
+\[
+  H(x,1-x) = - (x {\log}_2 x + (1-x) {\log}_2 (1-x))
+\]
+The shape of this curve is:
+
+\centerline{\psfig{figure=Figures/entropy.ps,width=6in}}
+
+%More generally, the entropy in a distribution over $n$ classes, where
+%the distribution is $x_1,\ldots,x_n$ is:
+%\[
+%  H(x_1,\ldots,x_n) = \sum_{i=1}^n x_i \log x_i.
+%\]
+
+In general, entropy is the converse of information.  The more entropy a
+distribution has, the less information we have about instances from that
+distribution.  
+
+Thus, we want to split so that, after splitting, we end up with
+distributions with high information --- low entropy.  For example, assume
+that I ask about ``Price''.  In this case, after splitting, I'd end up with
+three distributions --- $(x_f,1-x_f)$, $(x_c,1-x_c)$, $(x_e,1-x_e)$ ---
+corresponding to the samples for ``free'', ``cheap'', ``expensive''.
+If these distributions have lower entropy, then I've gained
+information by asking about the price.  Thus, our main consideration
+would be the three entropies $H(x_f, 1-x_f)$, etc.
+
+Of course, that gives us three numbers to contend with: the entropies
+of each of the three distributions.  How do we do that? Should we just
+average the entropies?  Not exactly.  For example, assume we start with
+(50,50) and split to \{(10,30), (30,10), (10,10)\} versus \{(1,3), (3,1), 
+(46,46)\}.  The ratios are the same, but the first is clearly 
+better than the second.  That is, leaves that end up with more samples are
+more important (I'm more likely to end up there when actually using the
+tree).  Therefore, if we split up our $n$ samples at this node into
+$n_f,n_c,n_e$, we have: 
+\[
+ \word{AvgEntropy}(Price) = \frac{n_f}{n} H(x_f,1-x_f) +
+  \frac{n_c}{n} H(x_c,1-x_c) + \frac{n_e}{n} H(x_e,1-x_e)
+\]
+Our goal is to increase the amount of information we have.  Thus, we
+first check how much entropy we have now:
+\[
+ H(\frac{n^+}{n}, \frac{n^-}{n})
+\]
+where $n^-$ and $n^+$ are the numbers of positive and negative
+examples at this node.  If we split on $A$, then our average entropy
+will be AvgEntropy(A).  
+
+{\bf Splitting rule:}  Choose to split on the attribute $A$ that
+maximizes the {\em information gain\/} --- the difference between our current
+entropy and the average entropy.
+\[
+ H(\frac{n^+}{n}, \frac{n^-}{n}) - AvgEntropy(A)
+\]
+Note: this expression is always non-negative.
+

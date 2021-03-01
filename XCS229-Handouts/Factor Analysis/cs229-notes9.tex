@@ -1,0 +1,406 @@
+\documentclass{article}
+%\documentstyle[11pt,handout,psfig]{article}
+
+\usepackage{fullpage,amssymb,amsmath,epsf}
+\usepackage[12pt]{extsizes}
+
+%These give really tight margins:
+%\setlength{\topmargin}{-0.3in}
+%\setlength{\textheight}{8.10in}
+%\setlength{\textwidth}{5.8in}
+%\setlength{\baselineskip}{0.1875in}
+%\addtolength{\leftmargin}{-2.775in}
+%\setlength{\footskip}{0.45in}
+%\setlength{\oddsidemargin}{0.5in}
+%\setlength{\evensidemargin}{0.5in}
+%%\setlength{\headsep}{0pt}
+%%\setlength{\headheight}{0pt}
+
+%\setlength{\topmargin}{-0.5in}
+\setlength{\textheight}{8in}
+%\setlength{\textwidth}{5.0in}
+%\setlength{\baselineskip}{0.1875in}
+%\addtolength{\leftmargin}{-2.775in}
+%\setlength{\footskip}{0.45in}
+%\setlength{\oddsidemargin}{0.5in}
+%\setlength{\evensidemargin}{0.5in}
+%%\setlength{\headsep}{0pt}
+%%\setlength{\headheight}{0pt}
+
+
+\markright{XCS229i}
+\pagestyle{myheadings}
+
+\input{macros}
+\input{notations_macros}
+\begin{document}
+\title{XCS229i Lecture Notes}
+\author{Andrew Ng}
+\date{}
+\maketitle
+
+\setcounter{part}{9}
+\part{Factor analysis}
+
+When we have data $\xsi\in \Re^\di$ that comes from a mixture of several Gaussians,
+the EM algorithm can be applied to fit a mixture model.  In this
+setting, we usually imagine problems where we have sufficient data
+to be able to discern the multiple-Gaussian structure in the data.  For instance,
+this would be the case if our training set size $\nexp$ was significantly
+larger than the dimension $\di$ of the data.
+
+Now, consider a setting in which $\di \gg \nexp$.
+In such a problem, it might be difficult to model
+the data even with a single Gaussian, much less a mixture of Gaussian. Specifically,
+since the $\nexp$ data points span only a low-dimensional subspace of $\Re^\di$, if we model
+the data as Gaussian, and estimate the mean and covariance using the usual
+maximum likelihood estimators,
+\begin{eqnarray*}
+\mu &=& \frac{1}{\nexp}\sum_{i=1}^\nexp \xsi  \\
+\Sigma &=& \frac{1}{\nexp}\sum_{i=1}^\nexp (\xsi -\mu) (\xsi -\mu)^T,
+\end{eqnarray*}
+we would find that the matrix $\Sigma$ is singular.  This means that $\Sigma^{-1}$
+does not exist, and $1/|\Sigma|^{1/2} = 1/0$. But both of these terms are needed
+in computing the usual density of a multivariate Gaussian distribution.  Another way
+of stating this difficulty is that maximum likelihood estimates of the parameters
+result in a Gaussian that places all of its probability in the affine space spanned
+by the data,\footnote{This is the set of points $x$ satisfying $x = \sum_{i=1}^\nexp \alpha_i \xsi$,
+for some $\alpha_i$'s so that $\sum_{i=1}^\nexp \alpha_1 = 1$.} and this corresponds to a singular
+covariance matrix.
+
+More generally, unless $\nexp$ exceeds $\di$ by some reasonable amount, the maximum likelihood
+estimates of the mean and covariance may be quite poor.  Nonetheless, we would still like to
+be able to fit a reasonable Gaussian model to the data, and perhaps capture some
+interesting covariance structure in the data.  How can we do this?
+
+In the next section, we begin by reviewing two possible restrictions on $\Sigma$
+that allow us to fit $\Sigma$ with small amounts of data but neither will give a
+satisfactory solution to our problem.  We next discuss some
+properties of Gaussians that will be needed later; specifically, how to find marginal
+and conditonal distributions of Gaussians.  Finally, we present the factor analysis model,
+and EM for it.
+
+
+\section{Restrictions of $\Sigma$}
+
+If we do not have sufficient data to fit a full covariance matrix, we may place some
+restrictions on the space of matrices $\Sigma$ that we will consider.  For instance,
+we may
+choose to fit a covariance matrix $\Sigma$ that is diagonal.  In this setting, the reader
+may easily verify that the maximum likelihood estimate of the covariance matrix is given by the
+diagonal matrix $\Sigma$ satisfying
+\[
+\Sigma_{jj} = \frac{1}{\nexp}\sum_{i=1}^\nexp (x_j^{(i)} -\mu_j)^2.
+\]
+Thus, $\Sigma_{jj}$ is just the empirical estimate of the variance of the $j$-th coordinate
+of the data.
+
+Recall that the contours of a Gaussian density are ellipses.  A diagonal $\Sigma$ corresponds
+to a Gaussian where the major axes of these ellipses are axis-aligned.
+
+Sometimes, we may place a further restriction on the covariance matrix that not only
+must it be diagonal, but its diagonal entries must all be equal.  In this setting,
+we have $\Sigma = \sigma^2I$, where $\sigma^2$ is the parameter under our control.
+The maximum likelihood estimate of $\sigma^2$ can be found to be:
+\[
+\sigma^2 = \frac{1}{\nexp \di} \sum_{j=1}^\di \sum_{i=1}^\nexp (x_j^{(i)} -\mu_j)^2.
+\]
+This model corresponds to using Gaussians whose densities have contours that are
+circles (in 2 dimensions; or spheres/hyperspheres in higher dimensions).
+
+If we are fitting a full, unconstrained, covariance matrix $\Sigma$ to data, it is
+necessary that $\nexp \geq \di+1$ in order for the maximum likelihood estimate of $\Sigma$ not
+to be singular.  Under either of the two restrictions above, we may obtain non-singular
+$\Sigma$ when $\nexp \geq 2$.
+
+However, restricting $\Sigma$ to be diagonal also means modeling the different coordinates
+$x_i$, $x_j$ of the data as being uncorrelated and independent.  Often, it would be nice to
+be able to capture some interesting correlation structure in the data.  If we were to use
+either of the restrictions on $\Sigma$ described above, we would therefore
+fail to do so.  In this set of notes, we will describe the factor analysis model,
+which uses more parameters than the diagonal $\Sigma$ and captures some correlations
+in the data, but also without having to fit a full covariance matrix.
+
+\section{Marginals and conditionals of Gaussians}
+
+Before describing factor analysis, we digress to talk about how to find conditional
+and marginal distributions of random variables with a joint multivariate Gaussian distribution.
+
+Suppose we have a vector-valued random variable
+\[
+x = \left[\begin{array}{c} x_1 \\ x_2 \end{array} \right],
+\]
+where $x_1 \in \Re^r$, $x_2 \in \Re^s$, and $x \in \Re^{r+s}$.  Suppose
+$x \sim \calN(\mu, \Sigma)$, where
+\[
+\mu = \left[\begin{array}{c} \mu_1 \\ \mu_2 \end{array} \right],
+\quad
+\Sigma = \left[\begin{array}{cc} \Sigma_{11} & \Sigma_{12} \\ \Sigma_{21} & \Sigma_{22} \end{array} \right].
+\]
+Here, $\mu_1 \in \Re^r$, $\mu_2 \in \Re^s$, $\Sigma_{11} \in \Re^{r\times r}$,
+$\Sigma_{12} \in \Re^{r\times s}$, and so on.  Note that since covariance matrices
+are symmetric, $\Sigma_{12} = \Sigma_{21}^T$.
+
+Under our assumptions, $x_1$ and $x_2$ are jointly multivariate Gaussian.  What is the
+marginal distribution of $x_1$?  It is not hard to see that $\E[x_1] = \mu_1$, and
+that $\Cov(x_1) = \E[(x_1-\mu_1)(x_1-\mu_1)] = \Sigma_{11}$.  To see that the latter
+is true, note that by definition of the joint covariance of $x_1$ and $x_2$, we have
+that
+\begin{eqnarray*}
+\Cov(x) &=& \Sigma \\
+&=& \left[\begin{array}{cc} \Sigma_{11} & \Sigma_{12} \\ \Sigma_{21} & \Sigma_{22} \end{array} \right] \\
+&=& \E[(x-\mu)(x-\mu)^T] \\
+&=& \E\left[
+\left(\begin{array}{c} x_1 - \mu_1 \\ x_2 - \mu_2 \end{array} \right)
+\left(\begin{array}{c} x_1 - \mu_1 \\ x_2 - \mu_2 \end{array} \right)^T \right] \\
+&=& \E\left[
+\begin{array}{cc}
+(x_1 - \mu_1)(x_1-\mu_1)^T & (x_1 - \mu_1)(x_2-\mu_2)^T \\
+(x_2 - \mu_2)(x_1-\mu_1)^T & (x_2 - \mu_2)(x_2-\mu_2)^T
+\end{array}
+\right].
+\end{eqnarray*}
+Matching the upper-left subblocks in the matrices in the second and the last lines above
+gives the result.
+
+Since marginal distributions of Gaussians are themselves Gaussian, we therefore have
+that the marginal distribution of $x_1$ is given by $x_1 \sim \calN(\mu_1, \Sigma_{11})$.
+
+Also, we can ask, what is the conditional distribution of $x_1$ given $x_2$?
+By referring to the definition of the multivariate Gaussian distribution, it
+can be shown that $x_1 | x_2 \sim \calN(\mu_{1|2}, \Sigma_{1|2})$, where
+
+\begin{eqnarray}
+\mu_{1|2} &=& \mu_1 + \Sigma_{12} \Sigma_{22}^{-1} (x_2 - \mu_2), \label{eqn-gausscond1} \\
+\Sigma_{1|2} &=& \Sigma_{11} - \Sigma_{12}\Sigma_{22}^{-1}\Sigma_{21}.\label{eqn-gausscond2}
+\end{eqnarray}
+
+When we work with the factor analysis model in the next section, these formulas for
+finding conditional and marginal distributions of Gaussians will be very useful.
+
+\section{The Factor analysis model}
+
+In the factor analysis model, we posit a joint distribution on $(x,z)$ as follows, where $z \in \Re^k$
+is a latent random variable:
+\begin{eqnarray*}
+z &\sim& \calN(0,I) \\
+x|z &\sim& \calN(\mu+\Lambda z, \Psi).
+\end{eqnarray*}
+
+Here, the parameters of our model are the vector $\mu \in \Re^\di$, the matrix
+$\Lambda \in \Re^{\di\times k}$, and the diagonal matrix $\Psi \in \Re^{\di\times \di}$.
+The value of $k$ is usually chosen to be smaller than $\di$.
+
+Thus, we imagine that each datapoint $\xsi$ is generated by sampling a $k$ dimension
+multivariate Gaussian $\zsi$.  Then, it is mapped to a $\di$-dimensional affine space of
+$\Re^\di$ by computing $\mu+\Lambda \zsi$.  Lastly, $\xsi$ is generated by adding
+covariance $\Psi$ noise to $\mu+\Lambda \zsi$.
+
+Equivalently (convince yourself that this is the case), we can therefore also define
+the factor analysis model according to
+\begin{eqnarray*}
+z &\sim& \calN(0,I) \\
+\epsilon &\sim& \calN(0, \Psi) \\
+x &=& \mu+\Lambda z + \epsilon
+\end{eqnarray*}
+where $\epsilon$ and $z$ are independent.
+
+Let's work out exactly what distribution our model defines.  Our random
+variables $z$ and $x$ have a joint Gaussian distribution
+\[
+\stackvec{z}{x} \sim \calN(\mu_{zx}, \Sigma).
+\]
+We will now find $\mu_{zx}$ and $\Sigma$.
+
+We know that $\E[z] = 0$, from the fact that $z \sim \calN(0,I)$.  Also, we have
+that
+\begin{eqnarray*}
+\E[x] &=& \E[\mu+\Lambda z +\epsilon] \\
+  &=& \mu + \Lambda \E[z] + \E[\epsilon] \\
+  &=& \mu.
+\end{eqnarray*}
+Putting these together, we obtain
+\[
+\mu_{zx} = \stackvec{\vec{0}}{\mu}
+\]
+Next, to find $\Sigma$, we need to calculate
+$\Sigma_{zz} = \E[(z-\E[z])(z-\E[z])^T]$ (the upper-left block of $\Sigma$),
+$\Sigma_{zx} = \E[(z-\E[z])(x-\E[x])^T]$ (upper-right block),
+and $\Sigma_{xx} = \E[(x-\E[x])(x-\E[x])^T]$ (lower-right block).
+
+Now, since $z \sim \calN(0,I)$, we easily find that $\Sigma_{zz} = \Cov(z) = I$.
+Also,
+\begin{eqnarray*}
+\E[(z-\E[z])(x-\E[x])^T] &=& \E[z(\mu+\Lambda z + \epsilon - \mu)^T] \\
+  &=& \E[zz^T]\Lambda^T + \E[z\epsilon^T] \\
+  &=& \Lambda^T.
+\end{eqnarray*}
+In the last step, we used the fact that $\E[zz^T] = \Cov(z)$ (since $z$ has zero mean),
+and $\E[z\epsilon^T] = \E[z]\E[\epsilon^T] = 0$ (since $z$ and $\epsilon$ are independent,
+and hence the expectation of their product is the product of their expectations).
+Similarly, we can find $\Sigma_{xx}$ as follows:
+\begin{eqnarray*}
+\E[(x-\E[x])(x-\E[x])^T] &=& \E[(\mu+\Lambda z + \epsilon - \mu) (\mu+\Lambda z + \epsilon - \mu)^T] \\
+&=& \E[\Lambda zz^T \Lambda^T + \epsilon z^T\Lambda^T + \Lambda z \epsilon^T + \epsilon\epsilon^T] \\
+&=& \Lambda \E[zz^T] \Lambda^T + \E[\epsilon\epsilon^T] \\
+&=& \Lambda \Lambda^T + \Psi.
+\end{eqnarray*}
+Putting everything together, we therefore have that
+\begin{equation}
+\stackvec{z}{x} \sim \calN\left(\stackvec{\vec{0}}{\mu}, \stackmat{I}{\Lambda^T}{\Lambda}{\Lambda\Lambda^T+\Psi}\right). \label{eqn-jointzx}
+\end{equation}
+
+Hence, we also see that the marginal distribution of $x$ is given
+by $x \sim \calN(\mu, \Lambda\Lambda^T+\Psi)$.  Thus, given a training set $\{\xsi; i=1,\ldots,\nexp\}$,
+we can write down the log likelihood of the parameters:
+\[
+\ell(\mu, \Lambda, \Psi) = \log \prod_{i=1}^\nexp \frac{1}{(2\pi)^{\di/2}|\Lambda\Lambda^T+\Psi|^{1/2}}
+\exp\left(-\frac{1}{2} (\xsi - \mu)^T (\Lambda\Lambda^T+\Psi)^{-1} (\xsi-\mu) \right).
+\]
+To perform maximum likelihood estimation, we would like to maximize this quantity with
+respect to the parameters.  But maximizing this formula explicitly is hard (try it yourself),
+and we are aware of no algorithm that does so in closed-form.
+So, we will instead use to the EM algorithm.  In the next section, we derive EM for
+factor analysis.
+
+\section{EM for factor analysis}
+
+The derivation for the E-step is easy.  We need to
+compute $Q_i(\zsi) = p(\zsi | \xsi; \mu, \Lambda, \Psi)$.  By substituting the
+distribution given in Equation~(\ref{eqn-jointzx}) into
+the formulas~(\ref{eqn-gausscond1}-\ref{eqn-gausscond2}) used for finding the conditional
+distribution of a Gaussian, we
+find that $\zsi | \xsi; \mu, \Lambda, \Psi \sim \calN(\mu_{\zsi|\xsi}, \Sigma_{\zsi|\xsi})$,
+where
+\begin{eqnarray*}
+\mu_{\zsi|\xsi} &=& \Lambda^T(\Lambda\Lambda^T+\Psi)^{-1}(\xsi-\mu), \\
+\Sigma_{\zsi|\xsi} &=& I - \Lambda^T(\Lambda\Lambda^T+\Psi)^{-1}\Lambda.
+\end{eqnarray*}
+So, using these definitions for $\mu_{\zsi|\xsi}$ and $\Sigma_{\zsi|\xsi}$, we have
+\[
+Q_i(\zsi) = \frac{1}{(2\pi)^{k/2}|\Sigma_{\zsi|\xsi}|^{1/2}} \exp\left(-\frac{1}{2}(\zsi-\mu_{\zsi|\xsi})^T\Sigma_{\zsi|\xsi}^{-1}(\zsi-\mu_{\zsi|\xsi})\right).
+\]
+
+Let's now work out the M-step.  Here, we need to maximize
+\begin{equation}
+\sum_{i=1}^\nexp \int_\zsi Q_i(\zsi) \log \frac{p(\xsi, \zsi ; \mu, \Lambda, \Psi)}{Q_i(\zsi)} d\zsi
+\label{eqn-emfa1}
+\end{equation}
+with respect to the parameters $\mu, \Lambda, \Psi$.  We will work out only the
+optimization with respect to $\Lambda$, and leave the derivations
+of the updates for $\mu$ and $\Psi$ as an exercise to the reader.
+
+We can simplify Equation~(\ref{eqn-emfa1}) as follows:
+\begin{eqnarray}
+&& \hbox to -0.5in{} \sum_{i=1}^\nexp \int_\zsi Q_i(\zsi) \left[ \log p(\xsi | \zsi ; \mu, \Lambda, \Psi) + \log p(\zsi)  - \log Q_i(\zsi) \right] d\zsi  \\
+&=& \sum_{i=1}^\nexp \E_{\zsi \sim Q_i} \left[
+\log p(\xsi| \zsi ; \mu, \Lambda, \Psi) + \log p(\zsi)
+- \log Q_i(\zsi) \right]
+\end{eqnarray}
+Here, the ``$\zsi \sim Q_i$'' subscript indicates that the expectation is with respect to
+$\zsi$ drawn from $Q_i$.  In the subsequent development,
+we will omit this subscript when there is no risk of ambiguity.
+Dropping terms that do not depend on the
+parameters, we find that we need to maximize:
+\begin{eqnarray*}
+&&\hbox to -0.4in{} \sum_{i=1}^\nexp \E\left[ \log p(\xsi| \zsi ; \mu, \Lambda, \Psi)\right] \\
+&=& \sum_{i=1}^\nexp \E\left[ \log \frac{1}{(2\pi)^{\di/2}|\Psi|^{1/2}} \exp\left(-\frac{1}{2}
+(\xsi-\mu-\Lambda \zsi)^T\Psi^{-1} (\xsi-\mu-\Lambda \zsi)\right)\right] \\
+&=& \sum_{i=1}^\nexp \E\left[ -\frac{1}{2} \log|\Psi| - \frac{n}{2}\log (2\pi) - \frac{1}{2}
+(\xsi-\mu-\Lambda \zsi)^T\Psi^{-1} (\xsi-\mu-\Lambda \zsi)\right]
+\end{eqnarray*}
+Let's maximize this with respect to $\Lambda$. Only the last term above depends on $\Lambda$.
+Taking derivatives, and using the facts that $\tr\, a = a$ (for $a \in \Re$), $\tr AB = \tr BA$,
+and $\nabla_A \tr ABA^TC = CAB+C^TAB^T$, we get:
+\begin{eqnarray*}
+&& \hbox to -0.4in{} \nabla_\Lambda \sum_{i=1}^\nexp - \E\left[\frac{1}{2} (\xsi-\mu-\Lambda \zsi)^T\Psi^{-1} (\xsi-\mu-\Lambda \zsi) \right]\\
+&=& \sum_{i=1}^\nexp \nabla_\Lambda \E\left[ - \tr \frac{1}{2}\zsi^T \Lambda^T \Psi^{-1} \Lambda \zsi + \tr \zsi^T\Lambda^T \Psi^{-1} (\xsi-\mu) \right]\\
+&=& \sum_{i=1}^\nexp \nabla_\Lambda \E\left[  - \tr \frac{1}{2}\Lambda^T \Psi^{-1} \Lambda \zsi \zsi^T + \tr \Lambda^T \Psi^{-1} (\xsi-\mu) \zsi^T \right]\\
+&=& \sum_{i=1}^\nexp \E\left[ - \Psi^{-1} \Lambda \zsi \zsi^T + \Psi^{-1} (\xsi-\mu) \zsi^T \right]
+\end{eqnarray*}
+Setting this to zero and simplifying, we get:
+\[
+\sum_{i=1}^\nexp \Lambda \E_{\zsi \sim Q_i}\left[ \zsi \zsi^T\right] =
+\sum_{i=1}^\nexp (\xsi-\mu) \E_{\zsi \sim Q_i}\left[\zsi^T \right].
+\]
+Hence, solving for $\Lambda$, we obtain
+\begin{equation}
+\Lambda =
+\left(\sum_{i=1}^\nexp (\xsi-\mu) \E_{\zsi \sim Q_i}\left[\zsi^T \right]\right)
+\left(\sum_{i=1}^\nexp \E_{\zsi \sim Q_i} \left[ \zsi \zsi^T\right]\right)^{-1}.
+\label{eqn-gammaupdate}
+\end{equation}
+It is interesting to note the close relationship between this equation and
+the normal equation that we'd derived for least squares regression,
+\[
+\hbox{``$\theta^T = (y^TX)(X^TX)^{-1}$.''}
+\]
+The analogy is that here, the $x$'s are a linear function of the $z$'s (plus noise).  Given
+the ``guesses'' for $z$ that the E-step has found, we will now try to estimate
+the unknown linearity $\Lambda$ relating the $x$'s and $z$'s.  It is therefore no
+surprise that we obtain something similar to the normal equation.  There is, however,
+one important difference between this and an algorithm that performs least squares using
+just the ``best guesses'' of the $z$'s; we will see this difference shortly.
+
+To complete our M-step update, let's work out the values of the expectations in Equation~(\ref{eqn-gammaupdate}).
+From our definition of $Q_i$ being Gaussian with mean $\mu_{\zsi|\xsi}$ and covariance $\Sigma_{\zsi|\xsi}$, we
+easily find
+\begin{eqnarray*}
+\E_{\zsi \sim Q_i}\left[\zsi^T \right] &=& \mu_{\zsi|\xsi}^T \\
+\E_{\zsi \sim Q_i} \left[ \zsi \zsi^T\right] &=&
+\mu_{\zsi|\xsi} \mu_{\zsi|\xsi}^T + \Sigma_{\zsi|\xsi}.
+\end{eqnarray*}
+The latter comes from the fact that, for a random variable $Y$,
+$\Cov(Y) = \E[YY^T] - \E[Y]\E[Y]^T$, and hence
+$\E[YY^T] = \E[Y]\E[Y]^T + \Cov(Y)$.
+Substituting this back into Equation~(\ref{eqn-gammaupdate}), we get the M-step update
+for $\Lambda$:
+\begin{equation}
+\Lambda =
+\left(\sum_{i=1}^\nexp (\xsi-\mu) \mu_{\zsi|\xsi}^T\right)
+\left(\sum_{i=1}^\nexp \mu_{\zsi|\xsi} \mu_{\zsi|\xsi}^T + \Sigma_{\zsi|\xsi}\right)^{-1}.
+\end{equation}
+It is important to note the presence of the $\Sigma_{\zsi|\xsi}$ on the right
+hand side of this equation.  This is the covariance in the posterior distribution
+$p(\zsi|\xsi)$ of $\zsi$ give $\xsi$, and the M-step must take into account this uncertainty
+about $\zsi$ in the posterior. A common mistake in deriving EM is to assume that in the E-step,
+we need to calculate only expectation $E[z]$ of the latent random variable $z$,
+and then plug that into the optimization in the M-step everywhere $z$ occurs.
+While this worked for simple problems such as the mixture of Gaussians, in our
+derivation for factor analysis,
+we needed $E[zz^T]$ as well $\E[z]$; and as we saw,
+$E[zz^T]$ and $\E[z]\E[z]^T$ differ by the quantity $\Sigma_{z|x}$.
+%Thus, the EM
+Thus, the M-step update must take into account the covariance of $z$
+in the posterior distribution $p(\zsi|\xsi)$.
+
+Lastly, we can also find the M-step optimizations for the parameters $\mu$ and $\Psi$.
+It is not hard to show that the first is given by
+\[
+\mu = \frac{1}{\nexp}\sum_{i=1}^\nexp \xsi.
+\]
+Since this doesn't change as the parameters are varied (i.e., unlike the update for $\Lambda$, the
+right hand side
+does not depend on $Q_i(\zsi) = p(\zsi|\xsi; \mu, \Lambda, \Psi)$, which in turn depends on the parameters),
+this can be calculated just once and needs not be further updated as the algorithm is
+run.  Similarly, the diagonal $\Psi$ can be found by calculating
+\[
+\Phi = \frac{1}{\nexp} \sum_{i=1}^\nexp \xsi \xsi^T -
+\xsi \mu_{\zsi|\xsi}^T \Lambda^T
+- \Lambda \mu_{\zsi|\xsi} \xsi^T +
+\Lambda (\mu_{\zsi|\xsi} \mu_{\zsi|\xsi}^T + \Sigma_{\zsi|\xsi})\Lambda^T,
+\]
+and setting $\Psi_{ii} = \Phi_{ii}$ (i.e., letting $\Psi$ be the diagonal matrix
+containing only the diagonal entries of $\Phi$).
+
+
+
+
+%\begin{center}
+%\epsfxsize=3in
+%\epsffile{foo.eps}
+%\end{center}
+
+\end{document}
+
+

@@ -1,0 +1,205 @@
+\documentclass{article}
+%\documentstyle[11pt,handout,psfig]{article}
+
+\usepackage{fullpage,amssymb,amsmath,epsf}
+\usepackage[12pt]{extsizes}
+
+%These give really tight margins:
+%\setlength{\topmargin}{-0.3in}
+%\setlength{\textheight}{8.10in}
+%\setlength{\textwidth}{5.8in}           
+%\setlength{\baselineskip}{0.1875in}     
+%\addtolength{\leftmargin}{-2.775in}
+%\setlength{\footskip}{0.45in}
+%\setlength{\oddsidemargin}{0.5in}
+%\setlength{\evensidemargin}{0.5in}
+%%\setlength{\headsep}{0pt}
+%%\setlength{\headheight}{0pt}
+
+%\setlength{\topmargin}{-0.5in}
+\setlength{\textheight}{8in}
+%\setlength{\textwidth}{5.0in}           
+%\setlength{\baselineskip}{0.1875in}     
+%\addtolength{\leftmargin}{-2.775in}
+%\setlength{\footskip}{0.45in}
+%\setlength{\oddsidemargin}{0.5in}
+%\setlength{\evensidemargin}{0.5in}
+%%\setlength{\headsep}{0pt}
+%%\setlength{\headheight}{0pt}
+
+
+\markright{XCS229i}
+\pagestyle{myheadings}
+
+\input{macros}
+\begin{document}
+\title{XCS229i Lecture Notes}
+\author{Andrew Ng}
+\date{}
+\maketitle
+
+
+\noindent
+%Note: These notes are preliminary, and will be updated after we finish 
+%talking about model selection in class.
+%\documentstyle[12pt,psfig,epic]{article}
+%\documentstyle[12pt,handout,psfig]{article}
+%\documentstyle[12pt,mynotes,psfig]{article}
+
+\def\qed {\hfill\hbox{{\vspace{0.01in} \large $\Box$}}}
+
+%\renewcommand{\epsilon}{{\varepsilon}}
+%\newcommand{\ehat}{{\hat{\varepsilon}}}
+%\newcommand{\hhat}{{\hat{h}}}
+%\newcommand{\hstar}{{h^\ast}}
+%\newcommand{\muhat}{{\hat{\mu}}}
+%\newcommand{\sign}{{\rm sign}}
+
+
+\section{The perceptron and large margin classifiers}
+
+%We how SVMs, by using kernels, can use infinite-dimensional 
+%feature spaces.  Thus, the VC dimension of the hypothesis
+%class used by such SVMs is $\infinity$.  Why don't they overfit?
+%
+%It turns out that, by finding 
+
+In this final set of notes on learning theory, we will introduce
+a different model of machine learning.  Specifically, we have so
+far been considering {\bf batch learning} settings in which we are
+first given a training set to learn with, and our hypothesis $h$ 
+is then evaluated on separate test data.  In this set of notes, we will 
+consider the {\bf online learning} setting in which the algorithm
+has to make predictions continuously even while it's learning.
+
+In this setting, the learning algorithm 
+is given a sequence of examples 
+$(x^{(1)}, y^{(1)}), (x^{(2)}, y^{(2)}),  \ldots (x^{(m)}, y^{(m)})$ 
+in order.  
+Specifically, the algorithm first sees $x^{(1)}$ and is asked to predict 
+what it thinks $y^{(1)}$ is. 
+After making its prediction, the true value of $y^{(1)}$ is revealed 
+to the algorithm (and the algorithm may use this information to perform
+some learning).  The algorithm is then shown $x^{(2)}$ and
+again asked to make a prediction, after which $y^{(2)}$ is revealed, 
+and it may again 
+perform some more learning.  This proceeds until we reach $(x^{(m)}, y^{(m)})$.  
+In the online learning setting, we are interested in the total number of 
+errors made by the algorithm during this process.  Thus, it models 
+applications in which the algorithm has to make predictions even while it's
+still learning. 
+
+We will give a bound on the online learning error of the
+perceptron algorithm.  To make our subsequent derivations easier, we will 
+use the notational convention of denoting the class labels by
+$y= \in \{-1, 1\}$.  
+
+Recall that the perceptron algorithm has 
+parameters $\theta \in \Re^{n+1}$, and makes its predictions according to 
+\begin{equation}
+ h_\theta(x) = g(\theta^Tx)
+\end{equation}
+where 
+\[
+g(z) = \left\{\begin{array}{ll}
+    1  & \mbox{if~} z \geq 0 \\
+    -1  & \mbox{if~} z < 0.
+    \end{array} \right.
+\]
+Also, given a training example $(x,y)$, the perceptron learning
+rule updates the parameters as follows.  If $h_\theta(x) = y$, then 
+it makes no change to the parameters. 
+Otherwise, it performs 
+the update\footnote{This looks slightly different from the update rule
+we had written down earlier in the quarter 
+because here we have changed the labels to be $y \in \{-1,1\}$.  
+Also, the learning rate parameter $\alpha$ was dropped.  The only effect of the 
+learning rate is to scale all the parameters $\theta$ by some fixed constant,
+which does not affect the behavior of the perceptron.}
+\[
+\theta := \theta + y x.
+\]
+
+The following theorem gives a bound on the online learning error of the perceptron 
+algorithm, when it is run as an online algorithm that performs an update 
+each time it gets an example wrong.  Note that the bound below on the number 
+of errors does not have an explicit dependence on the number of
+examples $m$ in the sequence, or on the dimension $n$ of the inputs (!).
+
+\bigskip
+\noindent 
+{\bf Theorem (Block, 1962, and Novikoff, 1962)}.  Let a sequence of
+examples 
+$(x^{(1)}, y^{(1)}), (x^{(2)}, y^{(2)}),  \ldots (x^{(m)}, y^{(m)})$ be
+given. 
+Suppose that 
+$||x^{(i)}|| \leq D$ for all $i$, and further that there 
+exists a unit-length vector $u$
+($||u||_2=1$) such that $y^{(i)} \cdot (u^Tx^{(i)}) \geq \gamma$ for all
+examples in the sequence (i.e., $u^Tx^{(i)} \geq \gamma$ if $y^{(i)}=1$, 
+and $u^Tx^{(i)} \leq -\gamma$ if $y^{(i)}=-1$, so that $u$ separates 
+the data with a margin of at least $\gamma$).  Then the total number 
+of mistakes that the perceptron algorithm makes on this sequence is at 
+most $(D/\gamma)^2$. 
+
+\medskip
+\noindent
+{\bf Proof.}  
+The perceptron updates its weights only on those examples on which it 
+makes a mistake.  Let $\theta^{(k)}$ be the weights that were being used 
+when it made its $k$-th mistake.  So, $\theta^{(1)} = \vec{0}$ (since 
+the weights are initialized to zero), and if the $k$-th mistake was 
+on the example $(x^{(i)}, y^{(i)})$, then 
+$g( (x^{(i)})^T \theta^{(k)}) \neq y^{(i)}$, 
+which implies that 
+\begin{equation}
+(x^{(i)})^T \theta^{(k)} y^{(i)} \leq 0.  \label{eqn-negsign}
+\end{equation}
+Also, from the perceptron learning rule, we would have that
+$\theta^{(k+1)} = \theta^{(k)} + y^{(i)} x^{(i)}$. 
+
+We then have 
+\begin{eqnarray*}
+(\theta^{(k+1)})^T u &=& (\theta^{(k)})^T u + y^{(i)} (x^{(i)})^T u \\
+&\geq& (\theta^{(k)})^T u + \gamma 
+\end{eqnarray*}
+%Since $\theta^{(k)^Tu = \vec{0}^Tu = 0$, 
+By a straightforward inductive argument,
+implies that 
+\begin{equation}
+(\theta^{(k+1)})^T u \geq k \gamma.\label{eqn-boundnorm}
+\end{equation}
+
+Also, we have that 
+\begin{eqnarray}
+ || \theta^{(k+1)} ||^2 &=& ||\theta^{(k)} + y^{(i)} x^{(i)}||^2  \nonumber \\
+ &=& ||\theta^{(k)}||^2  + ||x^{(i)}||^2  + 2 y^{(i)}(x^{(i)})^T \theta^{(i)}\nonumber \\
+ &\leq& ||\theta^{(k)}||^2  + ||x^{(i)}||^2  \nonumber \\
+ &\leq& ||\theta^{(k)}||^2  + D^2  \label{eqn-boundnormsqr}
+\end{eqnarray}
+The third step above used Equation~(\ref{eqn-negsign}).
+Moreover, again by applying a straightfoward inductive 
+argument, we see that~(\ref{eqn-boundnormsqr}) implies 
+\begin{equation}
+||\theta^{(k+1)} ||^2 \leq k D^2.  \label{eqn-boundnormsqr2} 
+\end{equation}
+
+Putting together~(\ref{eqn-boundnorm}) and~(\ref{eqn-boundnormsqr}) 
+we find that 
+\begin{eqnarray*}
+\sqrt{k} D &\geq& ||\theta^{(k+1)}|| \\
+&\geq& (\theta^{(k+1)})^T u \\
+&\geq& k \gamma. 
+\end{eqnarray*}
+The second inequality above follows from the fact that $u$ is a unit-length
+vector (and $z^Tu = ||z|| \cdot ||u|| \cos\phi \leq ||z|| \cdot ||u||$, where
+$\phi$ is the angle between $z$ and $u$).
+Our result implies that $k \leq (D/\gamma)^2$.   Hence, if the perceptron made
+a $k$-th mistake, then $k \leq (D/\gamma)^2$. \qed
+
+
+
+
+\end{document}
+
+

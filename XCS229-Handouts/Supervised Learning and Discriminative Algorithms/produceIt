@@ -1,0 +1,5 @@
+latex cs229-notes1
+dvips -t letter -Ppdf -G0 cs229-notes1.dvi -o cs229-notes1.ps
+ps2pdf cs229-notes1.ps
+dvips -t letter cs229-notes1.dvi -o cs229-notes1.ps
+

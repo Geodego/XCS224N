@@ -1,0 +1,5 @@
+Portland real estate price dataset.  Manually entered from entries
+posted on Craigslist Portland on September 21, 2007 by dramage.
+
+AskingPrice,SquareFeet,Bedrooms
+
