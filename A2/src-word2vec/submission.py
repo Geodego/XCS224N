@@ -79,6 +79,7 @@ def naive_softmax_loss_and_gradient(center_word_vec, outside_word_idx, outside_v
 
     #grad_center_vec = np.transpose(outside_vectors) @ (y_pred - y).reshape((voc_size, 1))
     grad_center_vec = (y_pred - y).reshape((1, voc_size)) @ outside_vectors
+    grad_center_vec = grad_center_vec.squeeze()
     #grad_outside_vecs = center_word_vec.reshape((-1, 1)) @ (y_pred - y).reshape((1, voc_size))
     grad_outside_vecs = (y_pred - y).reshape((voc_size, 1)) @ center_word_vec.reshape((1, -1))
 
@@ -172,7 +173,7 @@ def skipgram(current_center_word, window_size, outside_words, word2ind, center_w
                                                                 outside_vectors=outside_vectors,
                                                                 dataset=dataset)
         loss += loss_current
-        grad_center_vecs += gradc
+        grad_center_vecs[word2ind[current_center_word]] += gradc
         grad_outside_vectors += grado
     ### END CODE HERE
 
