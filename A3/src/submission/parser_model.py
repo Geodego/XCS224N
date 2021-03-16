@@ -72,6 +72,11 @@ class ParserModel(nn.Module):
         ###     Xavier Init: https://pytorch.org/docs/stable/nn.html#torch.nn.init.xavier_uniform_
         ###     Dropout: https://pytorch.org/docs/stable/nn.html#torch.nn.Dropout
         ### START CODE HERE (~5 Lines)
+        self.embed_to_hidden = nn.Linear(self.embed_size * self.n_features, self.hidden_size)
+        torch.nn.init.xavier_uniform_(self.embed_to_hidden.weight)
+        self.dropout = nn.Dropout(p=self.dropout_prob)
+        self.hidden_to_logits = nn.Linear(self.hidden_size, 3)
+        torch.nn.init.xavier_uniform_(self.hidden_to_logits.weight)
         ### END CODE HERE
 
     def embedding_lookup(self, t):
@@ -80,9 +85,11 @@ class ParserModel(nn.Module):
 
             PyTorch Notes:
                 - `self.pretrained_embeddings` is a torch.nn.Embedding object that we defined in __init__
-                - Here `t` is a tensor where each row represents a list of features. Each feature is represented by an integer (input token).
+                - Here `t` is a tensor where each row represents a list of features. Each feature is represented by an
+                integer (input token).
                 - In PyTorch the Embedding object, e.g. `self.pretrained_embeddings`, allows you to
-                    go from an index to embedding. Please see the documentation (https://pytorch.org/docs/stable/nn.html#torch.nn.Embedding)
+                    go from an index to embedding. Please see the documentation
+                    (https://pytorch.org/docs/stable/nn.html#torch.nn.Embedding)
                     to learn how to use `self.pretrained_embeddings` to extract the embeddings for your tensor `t`.
 
             @param t (Tensor): input tensor of tokens (batch_size, n_features)
@@ -92,8 +99,10 @@ class ParserModel(nn.Module):
         """
         ### TODO:
         ###     1) Use `self.pretrained_embeddings` to lookup the embeddings for the input tokens in `t`.
-        ###     2) After you apply the embedding lookup, you will have a tensor shape (batch_size, n_features, embedding_size).
-        ###         Use the tensor `view` method to reshape the embeddings tensor to (batch_size, n_features * embedding_size)
+        ###     2) After you apply the embedding lookup, you will have a tensor shape
+        ###      (batch_size, n_features, embedding_size).
+        ###         Use the tensor `view` method to reshape the embeddings tensor to
+        ###        (batch_size, n_features * embedding_size)
         ###
         ### Note: In order to get batch_size, you may need use the tensor .size() function:
         ###         https://pytorch.org/docs/stable/tensors.html#torch.Tensor.size
@@ -102,6 +111,8 @@ class ParserModel(nn.Module):
         ###     Embedding Layer: https://pytorch.org/docs/stable/nn.html#torch.nn.Embedding
         ###     View: https://pytorch.org/docs/stable/tensors.html#torch.Tensor.view
         ### START CODE HERE (~1-3 Lines)
+        x = self.pretrained_embeddings(t)
+        x = x.view(t.shape[0], -1)
         ### END CODE HERE
         return x
 
@@ -137,6 +148,11 @@ class ParserModel(nn.Module):
         ### Please see the following docs for support:
         ###     ReLU: https://pytorch.org/docs/stable/nn.html?highlight=relu#torch.nn.functional.relu
         ###  START CODE HERE (~3-5 lines)
+        emb = self.embedding_lookup(t)
+        hidden = self.embed_to_hidden(emb)
+        hidden = nn.functional.relu(hidden)
+        hidden = self.dropout(hidden)
+        logits = self.hidden_to_logits(hidden)
         ### END CODE HERE
         return logits
 

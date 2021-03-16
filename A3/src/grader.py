@@ -11,10 +11,11 @@ from submission.parser_utils import minibatches, load_and_preprocess_data
 import torch
 from datetime import datetime
 
+
 #############################################
 # HELPER FUNCTIONS FOR CREATING TEST INPUTS #
 #############################################
-def test_step(name, transition, stack, buf, deps,ex_stack, ex_buf, ex_deps):
+def test_step(name, transition, stack, buf, deps, ex_stack, ex_buf, ex_deps):
     """Tests that a single parse step returns the expected output"""
     pp = submission.PartialParse([])
     pp.stack, pp.buffer, pp.dependencies = stack, buf, deps
@@ -29,6 +30,7 @@ def test_step(name, transition, stack, buf, deps,ex_stack, ex_buf, ex_deps):
         "{:} test resulted in dependency list {:}, expected {:}".format(name, deps, ex_deps)
     print("{:} test passed!".format(name))
 
+
 def test_parse_step():
     """Simple tests for the PartialParse.parse_step function
     Warning: these are not exhaustive
@@ -39,6 +41,7 @@ def test_parse_step():
               ("ROOT", "cat",), ("sat",), (("cat", "the"),))
     test_step("RIGHT-ARC", "RA", ["ROOT", "run", "fast"], [], [],
               ("ROOT", "run",), (), (("run", "fast"),))
+
 
 def test_parse():
     """Simple tests for the PartialParse.parse function
@@ -54,6 +57,7 @@ def test_parse():
         "parse test failed: the input sentence should not be modified"
     print("parse test passed!")
 
+
 class DummyModel(object):
     """Dummy model for testing the minibatch_parse function
     First shifts everything onto the stack and then does exclusively right arcs if the first word of
@@ -64,11 +68,13 @@ class DummyModel(object):
         return [("RA" if pp.stack[1] is "right" else "LA") if len(pp.buffer) == 0 else "S"
                 for pp in partial_parses]
 
+
 def test_dependencies(name, deps, ex_deps):
     """Tests the provided dependencies match the expected dependencies"""
     deps = tuple(sorted(deps))
     assert deps == ex_deps, \
         "{:} test resulted in dependency list {:}, expected {:}".format(name, deps, ex_deps)
+
 
 def test_minibatch_parse():
     """Simple tests for the minibatch_parse function
@@ -95,9 +101,11 @@ def parses_equal(p1, p2):
            tuple(p1.buffer) == tuple(p2.buffer) and \
            tuple(sorted(p1.dependencies)) == tuple(sorted(p2.dependencies))
 
+
 def test_init(soln):
     sentence = [0, 1, 2, 3]
     return parses_equal(soln.PartialParse(sentence), submission.PartialParse(sentence))
+
 
 def run_parse_step(PartialParse, transition, stack, buf, deps):
     pp = PartialParse([])
@@ -105,10 +113,12 @@ def run_parse_step(PartialParse, transition, stack, buf, deps):
     pp.parse_step(transition)
     return pp
 
+
 def hidden_test_parse_step(transition, stack, buf, deps):
     expected = run_parse_step(soln.PartialParse, transition, stack, buf, deps)
     student_result = run_parse_step(submission.PartialParse, transition, stack, buf, deps)
     return parses_equal(expected, student_result)
+
 
 def hidden_test_parse(soln):
     sentence = [1, 2, 3]
@@ -117,11 +127,13 @@ def hidden_test_parse(soln):
     student_result = tuple(sorted(submission.PartialParse(sentence).parse(transitions)))
     return expected == student_result
 
+
 def hidden_test_minibatch_parse(sentences, batch_size, soln):
     expected = soln.minibatch_parse(sentences, soln.DummyModel(), batch_size)
     actual = submission.minibatch_parse(sentences, soln.DummyModel(), batch_size)
     return len(expected) == len(actual) and all(
         tuple(sorted(expected[i])) == tuple(sorted(actual[i])) for i in range(len(expected)))
+
 
 def setup():
     # IMP need to change the data format here
@@ -130,6 +142,7 @@ def setup():
     model = submission.ParserModel(embeddings)
     parser.model = model
     return parser, embeddings, train_data, dev_data, test_data
+
 
 def test_predict(parser, embeddings, train_data, dev_data, test_data, batch_size=2048):
     parser.model.eval()
@@ -140,11 +153,14 @@ def test_predict(parser, embeddings, train_data, dev_data, test_data, batch_size
             results = parser.model(train_x)
             return np.shape(results.numpy()) == (batch_size, 3)
 
+
 def xavier_test_tensor(weights):
     return type(weights) == torch.nn.parameter.Parameter
 
+
 def xavier_test_range(weights):
     return np.min(weights.detach().numpy()) < 0 and np.max(weights.detach().numpy()) > 0
+
 
 def xavier_test_bounds(weights):
     correct = True
@@ -154,14 +170,17 @@ def xavier_test_bounds(weights):
     correct &= val.min() > -epsilon
     return correct
 
+
 def test_xavier(weights):
     return xavier_test_bounds(weights) and xavier_test_range(weights) and xavier_test_tensor(weights)
+
 
 def uses_xavier(parser, embeddings, train_data, dev_data, test_data):
     model = parser.model
     parser.model.eval()
     with torch.no_grad():
         return test_xavier(model.embed_to_hidden.weight) and test_xavier(model.hidden_to_logits.weight)
+
 
 def test_parser_and_train(parser, embeddings, train_data, dev_data, test_data):
     output_dir = "autograder_(soln)/results/{:%Y%m%d_%H%M%S}/".format(datetime.now())
@@ -172,6 +191,7 @@ def test_parser_and_train(parser, embeddings, train_data, dev_data, test_data):
     parser.model.eval()  # Places model in "eval" mode, i.e. don't apply dropout layer
     UAS, _ = parser.parse(test_data)
     return UAS
+
 
 test_cases_ip = {
     'parser_model': {
@@ -202,151 +222,165 @@ test_cases_op = {
                      [-3.5574071407318115, -0.385123074054718, 1.1519192457199097]]
 }
 
+
 #########
 # TESTS #
 #########
 class Test_1a(GradedTestCase):
-  def setUp(self):
-    random.seed(35436)
-    np.random.seed(4355)
+    def setUp(self):
+        random.seed(35436)
+        np.random.seed(4355)
 
-  @graded()
-  def test_0(self):
-    """1a-0-basic:  Sanity check for PartialParse.parse_step"""
-    test_parse_step()
+    @graded()
+    def test_0(self):
+        """1a-0-basic:  Sanity check for PartialParse.parse_step"""
+        test_parse_step()
 
-  @graded()
-  def test_1(self):
-    """1a-1-basic:  Sanity check for PartialParse.parse"""
-    test_parse()
+    @graded()
+    def test_1(self):
+        """1a-1-basic:  Sanity check for PartialParse.parse"""
+        test_parse()
 
-  @graded(is_hidden=True)
-  def test_2(self):
-    """1a-2-hidden:  init"""
-    self.assertTrue(lambda: test_init(self.run_with_solution_if_possible(submission, lambda sub_or_sol:sub_or_sol)))
+    @graded(is_hidden=True)
+    def test_2(self):
+        """1a-2-hidden:  init"""
+        self.assertTrue(
+            lambda: test_init(self.run_with_solution_if_possible(submission, lambda sub_or_sol: sub_or_sol)))
 
-  @graded(is_hidden=True)
-  def test_3(self):
-    """1a-3-hidden:  shift"""
-    self.assertTrue(lambda: hidden_test_parse_step("S", [0, 1, 2], [1], []))
+    @graded(is_hidden=True)
+    def test_3(self):
+        """1a-3-hidden:  shift"""
+        self.assertTrue(lambda: hidden_test_parse_step("S", [0, 1, 2], [1], []))
 
-  @graded(is_hidden=True)
-  def test_4(self):
-    """1a-4-hidden:  right-arc"""
-    self.assertTrue(lambda: hidden_test_parse_step("RA", [0, 1, 2], [1], []))
+    @graded(is_hidden=True)
+    def test_4(self):
+        """1a-4-hidden:  right-arc"""
+        self.assertTrue(lambda: hidden_test_parse_step("RA", [0, 1, 2], [1], []))
 
-  @graded(is_hidden=True)
-  def test_5(self):
-    """1a-5-hidden:  left-arc"""
-    self.assertTrue(lambda: hidden_test_parse_step("LA", [0, 1, 2], [1], []))
+    @graded(is_hidden=True)
+    def test_5(self):
+        """1a-5-hidden:  left-arc"""
+        self.assertTrue(lambda: hidden_test_parse_step("LA", [0, 1, 2], [1], []))
 
-  @graded(is_hidden=True)
-  def test_6(self):
-    """1a-6-hidden:  parse"""
-    self.assertTrue(lambda: hidden_test_parse(self.run_with_solution_if_possible(submission, lambda sub_or_sol:sub_or_sol)))
+    @graded(is_hidden=True)
+    def test_6(self):
+        """1a-6-hidden:  parse"""
+        self.assertTrue(
+            lambda: hidden_test_parse(self.run_with_solution_if_possible(submission, lambda sub_or_sol: sub_or_sol)))
+
 
 class Test_1b(GradedTestCase):
-  def setUp(self):
-    random.seed(35436)
-    np.random.seed(4355)
-    self.sentences_simple = [["right", "arcs", "only"],
-                             ["left", "arcs", "only"],
-                             ["left", "arcs", "only"]]
-    self.sentences = [["right", "arcs", "only"],
-                      ["right", "arcs", "only", "again"],
-                      ["left", "arcs", "only"],
-                      ["left", "arcs", "only", "again"]]
+    def setUp(self):
+        random.seed(35436)
+        np.random.seed(4355)
+        self.sentences_simple = [["right", "arcs", "only"],
+                                 ["left", "arcs", "only"],
+                                 ["left", "arcs", "only"]]
+        self.sentences = [["right", "arcs", "only"],
+                          ["right", "arcs", "only", "again"],
+                          ["left", "arcs", "only"],
+                          ["left", "arcs", "only", "again"]]
 
-  @graded()
-  def test_0(self):
-    """1b-0-basic:  Sanity check for minibatch_parse"""
-    test_minibatch_parse()
+    @graded()
+    def test_0(self):
+        """1b-0-basic:  Sanity check for minibatch_parse"""
+        test_minibatch_parse()
 
+    @graded(is_hidden=True)
+    def test_1(self):
+        """1b-1-hidden: single batch"""
+        self.assertTrue(lambda: test_minibatch_parse(self.sentences_simple, 3,
+                                                     self.run_with_solution_if_possible(submission,
+                                                                                        lambda sub_or_sol: sub_or_sol)))
 
-  @graded(is_hidden=True)
-  def test_1(self):
-    """1b-1-hidden: single batch"""
-    self.assertTrue(lambda: test_minibatch_parse(self.sentences_simple, 3, self.run_with_solution_if_possible(submission, lambda sub_or_sol:sub_or_sol)))
+    @graded(is_hidden=True)
+    def test_2(self):
+        """1b-2-hidden: batch_size = 1"""
+        self.assertTrue(lambda: test_minibatch_parse(self.sentences_simple, 1,
+                                                     self.run_with_solution_if_possible(submission,
+                                                                                        lambda sub_or_sol: sub_or_sol)))
 
-  @graded(is_hidden=True)
-  def test_2(self):
-    """1b-2-hidden: batch_size = 1"""
-    self.assertTrue(lambda: test_minibatch_parse(self.sentences_simple, 1, self.run_with_solution_if_possible(submission, lambda sub_or_sol:sub_or_sol)))
+    @graded(is_hidden=True)
+    def test_3(self):
+        """1b-3-hidden: same_lengths"""
+        self.assertTrue(lambda: test_minibatch_parse(self.sentences_simple, 2,
+                                                     self.run_with_solution_if_possible(submission,
+                                                                                        lambda sub_or_sol: sub_or_sol)))
 
-  @graded(is_hidden=True)
-  def test_3(self):
-    """1b-3-hidden: same_lengths"""
-    self.assertTrue(lambda: test_minibatch_parse(self.sentences_simple, 2, self.run_with_solution_if_possible(submission, lambda sub_or_sol:sub_or_sol)))
+    @graded(is_hidden=True)
+    def test_4(self):
+        """1b-4-hidden: different_lengths"""
+        self.assertTrue(lambda: test_minibatch_parse(self.sentences, 2, self.run_with_solution_if_possible(submission,
+                                                                                                           lambda
+                                                                                                               sub_or_sol: sub_or_sol)))
 
-  @graded(is_hidden=True)
-  def test_4(self):
-    """1b-4-hidden: different_lengths"""
-    self.assertTrue(lambda: test_minibatch_parse(self.sentences, 2, self.run_with_solution_if_possible(submission, lambda sub_or_sol:sub_or_sol)))
 
 class Test_1c(GradedTestCase):
-  def setUp(self):
-    random.seed(35436)
-    np.random.seed(4355)
-    self.inputs = setup()
+    def setUp(self):
+        random.seed(35436)
+        np.random.seed(4355)
+        self.inputs = setup()
 
-  @graded(timeout=30)
-  def test_0(self):
-    """1c-0-basic:  Sanity check for Parser Model"""
-    torch.manual_seed(42)
-    torch.cuda.manual_seed(42)
-    np.random.seed(42)
-    random.seed(42)
-    torch.backends.cudnn.deterministic = True
+    @graded(timeout=30)
+    def test_0(self):
+        """1c-0-basic:  Sanity check for Parser Model"""
+        torch.manual_seed(42)
+        torch.cuda.manual_seed(42)
+        np.random.seed(42)
+        random.seed(42)
+        torch.backends.cudnn.deterministic = True
 
-    _, embeddings, _, _, _ = submission.load_and_preprocess_data()
-    model = submission.ParserModel(embeddings)
-    t = test_cases_ip['parser_model']['t']
-    model_actual = model.forward(t).data.numpy().tolist()
-    model_expected = test_cases_op['parser_model']
-    print("actual output")
-    print(model_actual)
-    print()
-    print("expected output")
-    print(model_expected)
-    self.assertTrue(np.isclose(model_actual, model_expected, atol=1e-2).all())
+        _, embeddings, _, _, _ = submission.load_and_preprocess_data()
+        model = submission.ParserModel(embeddings)
+        t = test_cases_ip['parser_model']['t']
+        model_actual = model.forward(t).data.numpy().tolist()
+        model_expected = test_cases_op['parser_model']
+        print("actual output")
+        print(model_actual)
+        print()
+        print("expected output")
+        print(model_expected)
+        self.assertTrue(np.isclose(model_actual, model_expected, atol=1e-2).all())
 
-  @graded(is_hidden = True, timeout=30)
-  def test_1(self):
-    """1c-1-hidden: predict_on_batch"""
-    test_predict(*self.inputs)
-    self.assertTrue(True)
+    @graded(is_hidden=True, timeout=30)
+    def test_1(self):
+        """1c-1-hidden: predict_on_batch"""
+        test_predict(*self.inputs)
+        self.assertTrue(True)
 
-  @graded(is_hidden = True, timeout=100)
-  def test_2(self):
-    """1c-2-hidden: uses_xavier"""
-    result = uses_xavier(*self.inputs)
-    self.assertTrue(result)
+    @graded(is_hidden=True, timeout=100)
+    def test_2(self):
+        """1c-2-hidden: uses_xavier"""
+        result = uses_xavier(*self.inputs)
+        self.assertTrue(result)
 
-  @graded(is_hidden = True, timeout=240)
-  def test_3(self):
-    """1c-3-hidden: Complete training and Test Set UAS"""
-    loss_UAS = test_parser_and_train(*self.inputs)
-    if loss_UAS is None:
-        loss_UAS = 100
-    print('Final UAS on test set is', loss_UAS)
-    self.assertTrue(loss_UAS < 1 and loss_UAS > 0.65)
+    @graded(is_hidden=True, timeout=240)
+    def test_3(self):
+        """1c-3-hidden: Complete training and Test Set UAS"""
+        loss_UAS = test_parser_and_train(*self.inputs)
+        if loss_UAS is None:
+            loss_UAS = 100
+        print('Final UAS on test set is', loss_UAS)
+        self.assertTrue(loss_UAS < 1 and loss_UAS > 0.65)
+
 
 def getTestCaseForTestID(test_id):
-  question, part, _ = test_id.split('-')
-  g = globals().copy()
-  for name, obj in g.items():
-    if inspect.isclass(obj) and name == ('Test_'+question):
-      return obj('test_'+part)
+    question, part, _ = test_id.split('-')
+    g = globals().copy()
+    for name, obj in g.items():
+        if inspect.isclass(obj) and name == ('Test_' + question):
+            return obj('test_' + part)
+
 
 if __name__ == '__main__':
-  # Parse for a specific test
-  parser = argparse.ArgumentParser()
-  parser.add_argument('test_case', nargs='?', default='all')
-  test_id = parser.parse_args().test_case
+    # Parse for a specific test
+    parser = argparse.ArgumentParser()
+    parser.add_argument('test_case', nargs='?', default='all')
+    test_id = parser.parse_args().test_case
 
-  assignment = unittest.TestSuite()
-  if test_id != 'all':
-    assignment.addTest(getTestCaseForTestID(test_id))
-  else:
-    assignment.addTests(unittest.defaultTestLoader.discover('.', pattern='grader.py'))
-  CourseTestRunner().run(assignment)
+    assignment = unittest.TestSuite()
+    if test_id != 'all':
+        assignment.addTest(getTestCaseForTestID(test_id))
+    else:
+        assignment.addTests(unittest.defaultTestLoader.discover('.', pattern='grader.py'))
+    CourseTestRunner().run(assignment)

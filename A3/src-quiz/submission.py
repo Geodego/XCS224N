@@ -8,6 +8,7 @@ def multiple_choice_1():
   # `return ['a', 'd']`
   response = []
   ### START CODE HERE ###
+  response = ['a']
   ### END CODE HERE ###
   return response
 
@@ -19,7 +20,7 @@ def multiple_choice_2():
   # `return ['a']`
   # or
   # `return ['a', 'd']`
-  response = []
+  response = ['a']
   ### START CODE HERE ###
   ### END CODE HERE ###
   return response
@@ -32,7 +33,7 @@ def multiple_choice_3a():
   # `return ['a']`
   # or
   # `return ['a', 'd']`
-  response = []
+  response = ['b']
   ### START CODE HERE ###
   ### END CODE HERE ###
   return response
@@ -45,7 +46,7 @@ def multiple_choice_3b():
   # `return ['a']`
   # or
   # `return ['a', 'd']`
-  response = []
+  response = ['a']
   ### START CODE HERE ###
   ### END CODE HERE ###
   return response
@@ -58,7 +59,7 @@ def multiple_choice_4a():
   # `return ['a']`
   # or
   # `return ['a', 'd']`
-  response = []
+  response = ['b']
   ### START CODE HERE ###
   ### END CODE HERE ###
   return response
@@ -71,7 +72,7 @@ def multiple_choice_4b():
   # `return ['a']`
   # or
   # `return ['a', 'd']`
-  response = []
+  response = ['c']
   ### START CODE HERE ###
   ### END CODE HERE ###
   return response
@@ -84,7 +85,7 @@ def multiple_choice_4c():
   # `return ['a']`
   # or
   # `return ['a', 'd']`
-  response = []
+  response = ['d']
   ### START CODE HERE ###
   ### END CODE HERE ###
   return response
@@ -97,7 +98,7 @@ def multiple_choice_4d():
   # `return ['a']`
   # or
   # `return ['a', 'd']`
-  response = []
+  response = ['b']
   ### START CODE HERE ###
   ### END CODE HERE ###
   return response
@@ -110,7 +111,7 @@ def multiple_choice_4e():
   # `return ['a']`
   # or
   # `return ['a', 'd']`
-  response = []
+  response = ['a']
   ### START CODE HERE ###
   ### END CODE HERE ###
   return response
@@ -123,7 +124,7 @@ def multiple_choice_5():
   # `return ['a']`
   # or
   # `return ['a', 'd']`
-  response = []
+  response = ['a']
   ### START CODE HERE ###
   ### END CODE HERE ###
   return response
@@ -136,7 +137,7 @@ def multiple_choice_6():
   # `return ['a']`
   # or
   # `return ['a', 'd']`
-  response = []
+  response = ['a']
   ### START CODE HERE ###
   ### END CODE HERE ###
   return response
@@ -149,7 +150,7 @@ def multiple_choice_7():
   # `return ['a']`
   # or
   # `return ['a', 'd']`
-  response = []
+  response = ['c']
   ### START CODE HERE ###
   ### END CODE HERE ###
   return response
@@ -162,7 +163,7 @@ def multiple_choice_8():
   # `return ['a']`
   # or
   # `return ['a', 'd']`
-  response = []
+  response = ['c']
   ### START CODE HERE ###
   ### END CODE HERE ###
   return response
@@ -175,7 +176,7 @@ def multiple_choice_9():
   # `return ['a']`
   # or
   # `return ['a', 'd']`
-  response = []
+  response = ['b']
   ### START CODE HERE ###
   ### END CODE HERE ###
   return response
