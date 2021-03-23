@@ -67,6 +67,14 @@ class NMT(nn.Module):
         ###     Dropout Layer:
         ###         https://pytorch.org/docs/stable/nn.html#torch.nn.Dropout
         ### START CODE HERE (~8 Lines)
+        self.encoder = nn.LSTM(input_size=embed_size, hidden_size=hidden_size, bias=True, bidirectional=True)
+        self.decoder = nn.LSTMCell(embed_size+hidden_size, hidden_size, bias=True)
+        self.h_projection = nn.Linear(2*hidden_size, hidden_size, bias=False)
+        self.c_projection = nn.Linear(2*hidden_size, hidden_size, bias=False)
+        self.att_projection = nn.Linear(2*hidden_size, hidden_size, bias=False)
+        self.combined_output_projection = nn.Linear(3*hidden_size, hidden_size, bias=False)
+        self.target_vocab_projection = nn.Linear(hidden_size, len(self.vocab.tgt), bias=False)
+        self.dropout = nn.Dropout(p=dropout_rate)
         ### END CODE HERE
 
     def forward(self, source: List[List[str]], target: List[List[str]]) -> torch.Tensor:
@@ -155,6 +163,17 @@ class NMT(nn.Module):
         ###     Tensor Permute:
         ###         https://pytorch.org/docs/stable/tensors.html#torch.Tensor.permute
         ### START CODE HERE (~ 8 Lines)
+        X = self.model_embeddings.source(source_padded)
+        padded = pack_padded_sequence(X, lengths=source_lengths)
+        packed_output = self.encoder(padded)
+        enc_hiddens = pad_packed_sequence(packed_output[0])[0]
+        enc_hiddens = torch.transpose(enc_hiddens, 0, 1)
+        last_hidden, last_cell = packed_output[1]
+        init_decoder_hidden = last_hidden.view((last_hidden.shape[1], last_hidden.shape[2]*2))
+        init_decoder_hidden = self.h_projection(init_decoder_hidden)
+        init_decoder_cell = last_cell.view((last_cell.shape[1], last_cell.shape[2]*2))
+        init_decoder_cell = self.c_projection(init_decoder_cell)
+        dec_init_state = (init_decoder_hidden, init_decoder_cell)
         ### END CODE HERE
 
         return enc_hiddens, dec_init_state

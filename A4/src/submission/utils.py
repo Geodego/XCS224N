@@ -18,6 +18,11 @@ def pad_sents(sents, pad_token):
     sents_padded = []
 
     ### START CODE HERE (~6 Lines)
+    len_max = 0
+    for s in sents:
+        l = len(s)
+        len_max = l if l > len_max else len_max
+    sents_padded = [s + (len_max - len(s))*[pad_token] if (len_max > len(s)) else s for s in sents]
     ### END CODE HERE
 
     return sents_padded
