@@ -352,7 +352,7 @@ class NMT(nn.Module):
         alpha_t = alpha_t.unsqueeze(dim=1)  # now alpha_t is shape(b, 1, src_len)
         a_t = alpha_t.bmm(enc_hiddens)  # a_t shape (b, 1, 2h), enc_hiddens is shape (b, src_len, 2h)
         a_t = a_t.squeeze(dim=1)  # a_t should be shape (b, 2h)
-        Ut = torch.cat([a_t, dec_hidden], dim=1)  # shape (b, 3h)
+        Ut = torch.cat([dec_hidden, a_t], dim=1)  # shape (b, 3h)
         Vt = self.combined_output_projection(Ut)  # shape(b, h)
         O_t = torch.nn.functional.tanh(Vt)
         O_t = self.dropout(O_t)
