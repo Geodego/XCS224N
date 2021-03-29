@@ -425,6 +425,7 @@ class Test_1e(GradedTestCase):
 
     def stepFunction(Ybar_t, dec_state, enc_hiddens, enc_hiddens_proj, enc_masks):
       dec_state = torch.load('./sanity_check_en_es_data/step_dec_state_{}.pkl'.format(COUNTER[0]))
+      print(COUNTER[0])
       o_t = torch.load('./sanity_check_en_es_data/step_o_t_{}.pkl'.format(COUNTER[0]))
       COUNTER[0] += 1
       return dec_state, o_t, None

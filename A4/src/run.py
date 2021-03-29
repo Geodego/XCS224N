@@ -131,6 +131,10 @@ def train(args: Dict):
     vocab_mask[vocab.tgt['<pad>']] = 0
 
     device = torch.device("cuda:0" if args['--cuda'] else "cpu")
+    if torch.cuda.is_available():
+        device = torch.device("cuda:0")
+
+    print(torch.cuda.get_device_name(device))
     print('use device: %s' % device, file=sys.stderr)
 
     model = model.to(device)
