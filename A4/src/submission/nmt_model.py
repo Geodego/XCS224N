@@ -332,7 +332,7 @@ class NMT(nn.Module):
         ###           - You will need to do some squeezing and unsqueezing.
         ###     Note: b = batch size, src_len = maximum source length, h = hidden size.
         ###
-        ###     3. Concatenate dec_hidden with a_t to compute tensor U_t
+        ###     3. Concatenate dec_hidden with a_t to compute tensor U_t [a_t, dec_hidden]
         ###     4. Apply the combined output projection layer to U_t to compute tensor V_t
         ###     5. Compute tensor O_t by first applying the Tanh function and then the dropout layer.
         ###
@@ -352,7 +352,7 @@ class NMT(nn.Module):
         alpha_t = alpha_t.unsqueeze(dim=1)  # now alpha_t is shape(b, 1, src_len)
         a_t = alpha_t.bmm(enc_hiddens)  # a_t shape (b, 1, 2h), enc_hiddens is shape (b, src_len, 2h)
         a_t = a_t.squeeze(dim=1)  # a_t should be shape (b, 2h)
-        Ut = torch.cat([dec_hidden, a_t], dim=1)  # shape (b, 3h)
+        Ut = torch.cat([a_t, dec_hidden], dim=1)  # shape (b, 3h)
         Vt = self.combined_output_projection(Ut)  # shape(b, h)
         O_t = torch.nn.functional.tanh(Vt)
         O_t = self.dropout(O_t)
