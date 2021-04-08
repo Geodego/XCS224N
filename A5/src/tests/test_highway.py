@@ -7,7 +7,7 @@ from A5.src.submission.highway import Highway
 @pytest.fixture(scope='class')
 def simple_highway() -> Highway:
     e_word = 3
-    highway = Highway(e_word=e_word)
+    highway = Highway(e_word=e_word, device='cpu')
     # set projection weights to one and bias to 0
     highway.projection[0].weight = torch.nn.Parameter(torch.ones((e_word, e_word)))
     highway.projection[0].bias = torch.nn.Parameter(torch.zeros(e_word))

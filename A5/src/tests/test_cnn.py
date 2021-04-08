@@ -11,7 +11,7 @@ max_word = 5
 
 @pytest.fixture(scope='class')
 def simple_cnn() -> CNN:
-    cnn = CNN(e_word=e_word, char_dim=char_dim, kernel=kernel)
+    cnn = CNN(e_word=e_word, char_dim=char_dim, kernel=kernel, device='cpu')
     channel1 = torch.ones((1, char_dim, kernel))
     channel2 = torch.ones((1, char_dim, kernel)) * 0.5
     channels = torch.cat((channel1, channel2), dim=0)
@@ -34,3 +34,5 @@ def test_cnn(simple_cnn):
     expected = np.concatenate((conv1, conv2), axis=0)
     actual = cnn(torch.tensor(words).float())
     assert np.isclose(actual.detach().numpy(), expected).all()
+
+

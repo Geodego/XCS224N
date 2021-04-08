@@ -39,8 +39,9 @@ class NMT(nn.Module):
         """
         super(NMT, self).__init__()
 
-        self.model_embeddings_source = ModelEmbeddings(embed_size, vocab.src)
-        self.model_embeddings_target = ModelEmbeddings(embed_size, vocab.tgt)
+        device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
+        self.model_embeddings_source = ModelEmbeddings(embed_size, vocab.src, device)
+        self.model_embeddings_target = ModelEmbeddings(embed_size, vocab.tgt, device)
 
         self.hidden_size = hidden_size
         self.dropout_rate = dropout_rate
@@ -94,8 +95,23 @@ class NMT(nn.Module):
         ###     - Add `target_padded_chars` for character level padded encodings for target
         ###     - Modify calls to encode() and decode() to use the character level encodings
         ### START CODE HERE for part 1g
+        # target_padded Tensor: (max_sentence length, batch size)
+        target_padded = self.vocab.tgt.to_input_tensor(target, device=self.device)
+        # source_padded_chars (max_sentence_length, batch_size, max_word_length)
+        source_padded_chars = self.vocab.src.to_input_tensor_char(source, device=self.device)
+        # target_padded_chars (max_sentence_length, batch_size, max_word_length)
+        target_padded_chars = self.vocab.tgt.to_input_tensor_char(target, device=self.device)
+        # enc_hiddens: encoder hidden states permuted shape(batch size, seq_length, 2*hidden_dim)
+        # dec_init_state = (init_decoder_hidden, init_decoder_cell), projections of las hidden states and cells
+        # of the encoder. Both have shape (batch size, hidden dim)
+        enc_hiddens, dec_init_state = self.encode(source_padded_chars, source_lengths)
+        # enc_masks has shape (batch size, max sentence length) has a value for non padded words and 1 for padded words
+        enc_masks = self.generate_sent_masks(enc_hiddens, source_lengths)
+        # combined output shape (max tgt_len, batch size,  hidden dim)
+        combined_outputs = self.decode(enc_hiddens, enc_masks, dec_init_state, target_padded_chars)
         ### END CODE HERE
 
+        # following linear projection on the target vocabulary apply log_softmax
         P = F.log_softmax(self.target_vocab_projection(combined_outputs), dim=-1)
 
         # Zero out, probabilities for which we have nothing in the target text
@@ -136,13 +152,20 @@ class NMT(nn.Module):
         """
         enc_hiddens, dec_init_state = None, None
 
+        # ModelEmbeddings.forward(): X has shape (sentence_length, batch_size, embed_size)
         X = self.model_embeddings_source(source_padded)
+        # pack the sentences reorganized by length to optimize computation
         X_packed = pack_padded_sequence(X, source_lengths)
+        # enc_hiddens: hidden states shape (max_seq_length, batch_size, 2*hidden_dim(biderectional)
+        # last_hidden: [hidden_fwd_T, hidden_bacwd_0], shape(2(bidirectional), batch_size, hidden_size)
+        # last_cell: [cell_fwd_T, cell_bacwd_0], shape(2, batch_size, hidden_size)
         enc_hiddens, (last_hidden, last_cell) = self.encoder(X_packed)
         (enc_hiddens, _) = pad_packed_sequence(enc_hiddens)
-        enc_hiddens = enc_hiddens.permute(1, 0, 2)
-
+        enc_hiddens = enc_hiddens.permute(1, 0, 2)  # shape batch size, seq_length, 2*hidden_dim
+        # init_decoder_hidden: projection of last hidden forward and last hidden backward (hfwd_T, hbacward_0),
+        # shape (batch size, hidden dim)
         init_decoder_hidden = self.h_projection(torch.cat((last_hidden[0], last_hidden[1]), dim=1))
+        # idem with cell projection shape (batch size, hidden dim)
         init_decoder_cell = self.c_projection(torch.cat((last_cell[0], last_cell[1]), dim=1))
         dec_init_state = (init_decoder_hidden, init_decoder_cell)
 

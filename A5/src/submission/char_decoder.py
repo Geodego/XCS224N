@@ -28,6 +28,7 @@ class CharDecoder(nn.Module):
         ###       - Set the padding_idx argument of the embedding matrix.
         ###       - Create a new Embedding layer. Do not reuse embeddings created in Part 1 of this assignment.
         ### START CODE HERE for part 2a
+        super(CharDecoder, self).__init__()
         ### END CODE HERE
 
     def forward(self, input, dec_hidden=None):

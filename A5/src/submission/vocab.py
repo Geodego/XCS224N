@@ -161,7 +161,7 @@ class VocabEntry(object):
         padded = pad_sents_char(sents=char_ids, char_pad_token=self['<pad>'])
         # shape sents_tensor (batch_size, max_sentence_length, max_word_length)
         sents_tensor = torch.tensor(padded, dtype=torch.long, device=device)
-        sents_tensor = sents_tensor.transpose(dim0=0, dim1=1) # shape (max_sentence_length, batch_size, max_word_length)
+        sents_tensor = sents_tensor.transpose(dim0=0, dim1=1)  # shape (max_sentence_length, batch_size, max_word_length)
         return sents_tensor
         ### END CODE HERE
 
