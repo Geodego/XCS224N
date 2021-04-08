@@ -13,7 +13,7 @@ elif [ "$1" = "test" ]; then
 elif [ "$1" = "train_local" ]; then
   mkdir -p trained_models
   	python run.py train --save-to=./trained_models/model_soln.bin --train-src=./en_es_data/train.es --train-tgt=./en_es_data/train.en \
-        --dev-src=./en_es_data/dev.es --dev-tgt=./en_es_data/dev.en --vocab=./vocabs/vocab_soln.json --batch-size=2 --cuda
+        --dev-src=./en_es_data/dev.es --dev-tgt=./en_es_data/dev.en --vocab=./vocabs/vocab_soln.json --batch-size=2
 
 elif [ "$1" = "test_local" ]; then
     mkdir -p outputs
@@ -29,7 +29,7 @@ elif [ "$1" = "test_local_q1" ]; then
     mkdir -p outputs
     touch outputs/test_outputs_local_q1.txt
     python run.py decode trained_models/model_local_q1_soln.bin ./en_es_data/test_tiny.es ./en_es_data/test_tiny.en outputs/test_outputs_local_q1_soln.txt \
-        --no-char-decoder
+        --no-char-decoder --cuda
 elif [ "$1" = "train_local_q2" ]; then
   mkdir -p trained_models
 	python run.py train --save-to=./trained_models/model_local_q2_soln.bin --train-src=./en_es_data/train_tiny.es --train-tgt=./en_es_data/train_tiny.en \
