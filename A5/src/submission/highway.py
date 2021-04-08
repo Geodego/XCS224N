@@ -34,9 +34,10 @@ class Highway(nn.Module):
         output of the Highway gate, tensor of shape (batch_size, e_word)
         """
         batch_size = x_conv_out.shape[0]
-        x_proj = self.projection(x_conv_out)  # shape (batch_size, e_word)
+        print('xconv_out: {}'.format(x_conv_out.device))
+        x_proj = self.projection(x_conv_out).to(self.device)  # shape (batch_size, e_word)
         print('xproj: {}'.format(x_proj.device))
-        x_gate = self.gate(x_conv_out)  # shape (batch_size, e_word)
+        x_gate = self.gate(x_conv_out).to(self.device)  # shape (batch_size, e_word)
         print('xgate: {}'.format(x_gate.device))
         print('highway: {}'.format(self.device))
         x_highway = x_gate * x_proj + (torch.ones((batch_size, self.e_word), device=self.device) - x_gate) * x_conv_out
