@@ -35,8 +35,10 @@ class Highway(nn.Module):
         """
         batch_size = x_conv_out.shape[0]
         x_proj = self.projection(x_conv_out)  # shape (batch_size, e_word)
+        print('xproj: {}'.format(x_proj.device))
         x_gate = self.gate(x_conv_out)  # shape (batch_size, e_word)
-
+        print('xgate: {}'.format(x_gate.device))
+        print('highway: {}'.format(self.device))
         x_highway = x_gate * x_proj + (torch.ones((batch_size, self.e_word), device=self.device) - x_gate) * x_conv_out
         return x_highway
 

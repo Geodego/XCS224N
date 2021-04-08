@@ -22,6 +22,3 @@ def test_model_embedding(embedding):
     expected_shape = torch.Size([max_len, batch_size, embed_size])
     assert word1_embedded.shape == expected_shape
 
-
-def test_cnn_params_shape(embedding: ModelEmbeddings):
-    w = embedding.
