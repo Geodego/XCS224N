@@ -13,7 +13,7 @@ elif [ "$1" = "test" ]; then
 elif [ "$1" = "train_local" ]; then
   mkdir -p trained_models
   	python run.py train --save-to=./trained_models/model_soln.bin --train-src=./en_es_data/train.es --train-tgt=./en_es_data/train.en \
-        --dev-src=./en_es_data/dev.es --dev-tgt=./en_es_data/dev.en --vocab=./vocabs/vocab_soln.json --batch-size=2
+        --dev-src=./en_es_data/dev.es --dev-tgt=./en_es_data/dev.en --vocab=./vocabs/vocab_soln.json --batch-size=2 --cuda
 
 elif [ "$1" = "test_local" ]; then
     mkdir -p outputs
