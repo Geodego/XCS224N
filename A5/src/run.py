@@ -126,6 +126,7 @@ def train(args: Dict):
                 hidden_size=int(args['--hidden-size']),
                 dropout_rate=float(args['--dropout']),
                 vocab=vocab, no_char_decoder=args['--no-char-decoder'])
+    model = model.load(model_save_path)
     model.train()
 
     uniform_init = float(args['--uniform-init'])
