@@ -30,7 +30,7 @@ def nmt(data):
     return model
 
 
-def test_formard(nmt, data):
+def test_forward(nmt, data):
     source, target = data
     output = nmt(source=source, target=target)
     pass

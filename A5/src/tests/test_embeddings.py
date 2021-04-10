@@ -7,7 +7,7 @@ from A5.src.submission.vocab import VocabEntry
 @pytest.fixture()
 def embedding():
     vocab = VocabEntry()
-    emb = ModelEmbeddings(embed_size=4, vocab=vocab)
+    emb = ModelEmbeddings(embed_size=4, vocab=vocab, device=torch.device('cpu'))
     return emb
 
 

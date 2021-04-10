@@ -364,4 +364,17 @@ def main():
 
 
 if __name__ == '__main__':
+    #params = {'--save-to': './trained_models/model_local_q2_soln.bin',
+    #          '--train-src': './en_es_data/train_tiny.es',
+    #          '--train-tgt': './en_es_data/train_tiny.en',
+    #          '--dev-src': './en_es_data/dev_tiny.es',
+    #          '--dev-tgt': './en_es_data/dev_tiny.en',
+    #          '--vocab': './vocabs/vocab_tiny_q2_soln.json',
+    #          '--batch-size': 2,
+    #          '--max-epoch':  201,
+    #          '--valid-niter': 100,
+     #         '--clip-grad': 5, '--log-every': 10, '--embed-size': 256, '--hidden-size': 256, '--dropout': 0.3,
+     #         '--no-char-decoder': False, '--uniform-init': 0.1, '--cuda':False, '--lr': 0.001
+     #         }
+    #train(params)
     main()

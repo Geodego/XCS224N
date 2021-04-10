@@ -9,7 +9,7 @@ Sahil Chopra <schopra8@stanford.edu>
 Anand Dhoot <anandd@stanford.edu>
 Michael Hahn <mhahn2@stanford.edu>
 """
-
+import torch
 import torch.nn as nn
 
 # Do not change these imports; your module names should be
@@ -28,7 +28,7 @@ class ModelEmbeddings(nn.Module):
     Class that converts input words to their CNN-based embeddings.
     """
 
-    def __init__(self, embed_size, vocab, device, e_char=50):
+    def __init__(self, embed_size, vocab, device=None, e_char=50):
         """
         Init the Embedding layer for one language
         @param embed_size (int): Embedding size (dimensionality) for the output 
@@ -37,13 +37,14 @@ class ModelEmbeddings(nn.Module):
         @param device (torch.device)
         """
         super(ModelEmbeddings, self).__init__()
-
         ## A4 code
         # pad_token_idx = vocab.src['<pad>']
         # self.embeddings = nn.Embedding(len(vocab.src), embed_size, padding_idx=pad_token_idx)
         ## End A4 code
 
         ### START CODE HERE for part 1f
+        if device is None:
+            device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
         self.device = device
         self.vocab = vocab
         self.embed_size = embed_size

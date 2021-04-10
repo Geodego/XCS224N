@@ -112,12 +112,14 @@ class NMT(nn.Module):
         ### END CODE HERE
 
         # following linear projection on the target vocabulary apply log_softmax
-        P = F.log_softmax(self.target_vocab_projection(combined_outputs), dim=-1)
+        P = F.log_softmax(self.target_vocab_projection(combined_outputs), dim=-1) # (max len, batch, tgt vocab size)
 
         # Zero out, probabilities for which we have nothing in the target text
         target_masks = (target_padded != self.vocab.tgt['<pad>']).float()
 
-        # Compute log probability of generating true target words
+        # Compute log probability of generating true target words. Torch.gather as defined keeps only the probability
+        # value corresponding to the target word in the vocabulary. Along the 3rd dimension (target vocabulary size)
+        # keeps only the value in the vocabulary corresponding to the index of the target word
         target_gold_words_log_prob = torch.gather(P, index=target_padded[1:].unsqueeze(-1), dim=-1).squeeze(
             -1) * target_masks[1:]
         scores = target_gold_words_log_prob.sum()  # mhahn2 Small modification from A4 code.
@@ -126,7 +128,7 @@ class NMT(nn.Module):
             max_word_len = target_padded_chars.shape[-1]
 
             target_words = target_padded[1:].contiguous().view(-1)
-            target_chars = target_padded_chars[1:].view(-1, max_word_len)
+            target_chars = target_padded_chars[1:].contiguous().view(-1, max_word_len)
             target_outputs = combined_outputs.view(-1, self.hidden_size)
 
             target_chars_oov = target_chars  # torch.index_select(target_chars, dim=0, index=oovIndices)

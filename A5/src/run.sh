@@ -24,7 +24,7 @@ elif [ "$1" = "train_local_q1" ]; then
   mkdir -p trained_models
 	python run.py train --save-to=./trained_models/model_local_q1_soln.bin --train-src=./en_es_data/train_tiny.es --train-tgt=./en_es_data/train_tiny.en \
         --dev-src=./en_es_data/dev_tiny.es --dev-tgt=./en_es_data/dev_tiny.en --vocab=./vocabs/vocab_tiny_q1_soln.json --batch-size=2 \
-        --valid-niter=100 --max-epoch=101 --no-char-decoder --cuda
+        --valid-niter=100 --max-epoch=101 --no-char-decoder
 elif [ "$1" = "test_local_q1" ]; then
     mkdir -p outputs
     touch outputs/test_outputs_local_q1.txt
