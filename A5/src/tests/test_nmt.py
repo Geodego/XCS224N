@@ -33,4 +33,5 @@ def nmt(data):
 def test_forward(nmt, data):
     source, target = data
     output = nmt(source=source, target=target)
-    pass
+    print('load last saved model')
+

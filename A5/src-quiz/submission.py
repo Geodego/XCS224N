@@ -8,6 +8,7 @@ def multiple_choice_1():
   # `return ['a', 'd']`
   response = []
   ### START CODE HERE ###
+  response = ['a', 'b']
   ### END CODE HERE ###
   return response
 
@@ -21,6 +22,7 @@ def multiple_choice_2a():
   # `return ['a', 'd']`
   response = []
   ### START CODE HERE ###
+  response = ['a']
   ### END CODE HERE ###
   return response
 
@@ -34,6 +36,7 @@ def multiple_choice_2b():
   # `return ['a', 'd']`
   response = []
   ### START CODE HERE ###
+  response = ['b']
   ### END CODE HERE ###
   return response
 

@@ -126,16 +126,20 @@ def train(args: Dict):
                 hidden_size=int(args['--hidden-size']),
                 dropout_rate=float(args['--dropout']),
                 vocab=vocab, no_char_decoder=args['--no-char-decoder'])
-    print('load last saved model')
-    model = model.load(model_save_path)
+    # code modified below so that if model has been already trained it is used as a new starting point
+    # so that if training is interrupted by accident all is not lost
+    try:
+        model = model.load(model_save_path)
+        print('load last saved model')
+    except FileNotFoundError:
+        print('no model already trained. Start new training from scratch')
+        uniform_init = float(args['--uniform-init'])
+        if np.abs(uniform_init) > 0.:
+            print('uniformly initialize parameters [-%f, +%f]' % (uniform_init, uniform_init), file=sys.stderr)
+            for p in model.parameters():
+                p.data.uniform_(-uniform_init, uniform_init)
+    # code modified above
     model.train()
-
-    #uniform_init = float(args['--uniform-init'])
-    #if np.abs(uniform_init) > 0.:
-    #    print('uniformly initialize parameters [-%f, +%f]' % (uniform_init, uniform_init), file=sys.stderr)
-    #    for p in model.parameters():
-    #        p.data.uniform_(-uniform_init, uniform_init)
-
     vocab_mask = torch.ones(len(vocab.tgt))
     vocab_mask[vocab.tgt['<pad>']] = 0
 
@@ -337,6 +341,7 @@ def vocab(args: Dict):
     vocab.save(args['VOCAB_FILE'])
     print('vocabulary saved to %s' % args['VOCAB_FILE'])
 
+
 def main():
     """ Main func.
     """
@@ -366,7 +371,7 @@ def main():
 
 
 if __name__ == '__main__':
-    #params = {'--save-to': './trained_models/model_local_q2_soln.bin',
+    # params = {'--save-to': './trained_models/model_local_q2_soln.bin',
     #          '--train-src': './en_es_data/train_tiny.es',
     #          '--train-tgt': './en_es_data/train_tiny.en',
     #          '--dev-src': './en_es_data/dev_tiny.es',
@@ -375,8 +380,8 @@ if __name__ == '__main__':
     #          '--batch-size': 2,
     #          '--max-epoch':  201,
     #          '--valid-niter': 100,
-     #         '--clip-grad': 5, '--log-every': 10, '--embed-size': 256, '--hidden-size': 256, '--dropout': 0.3,
-     #         '--no-char-decoder': False, '--uniform-init': 0.1, '--cuda':False, '--lr': 0.001
-     #         }
-    #train(params)
+    #         '--clip-grad': 5, '--log-every': 10, '--embed-size': 256, '--hidden-size': 256, '--dropout': 0.3,
+    #         '--no-char-decoder': False, '--uniform-init': 0.1, '--cuda':False, '--lr': 0.001
+    #         }
+    # train(params)
     main()
