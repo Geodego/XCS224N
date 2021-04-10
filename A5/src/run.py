@@ -129,11 +129,11 @@ def train(args: Dict):
     model = model.load(model_save_path)
     model.train()
 
-    uniform_init = float(args['--uniform-init'])
-    if np.abs(uniform_init) > 0.:
-        print('uniformly initialize parameters [-%f, +%f]' % (uniform_init, uniform_init), file=sys.stderr)
-        for p in model.parameters():
-            p.data.uniform_(-uniform_init, uniform_init)
+    #uniform_init = float(args['--uniform-init'])
+    #if np.abs(uniform_init) > 0.:
+    #    print('uniformly initialize parameters [-%f, +%f]' % (uniform_init, uniform_init), file=sys.stderr)
+    #    for p in model.parameters():
+    #        p.data.uniform_(-uniform_init, uniform_init)
 
     vocab_mask = torch.ones(len(vocab.tgt))
     vocab_mask[vocab.tgt['<pad>']] = 0
