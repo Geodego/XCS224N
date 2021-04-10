@@ -3,7 +3,7 @@
 if [ "$1" = "train" ]; then
   mkdir -p trained_models
 	CUDA_VISIBLE_DEVICES=0 python run.py train --save-to=./trained_models/model_soln.bin --train-src=./en_es_data/train.es --train-tgt=./en_es_data/train.en \
-        --dev-src=./en_es_data/dev.es --dev-tgt=./en_es_data/dev.en --vocab=./vocabs/vocab_soln.json --cuda --batch-size=2
+        --dev-src=./en_es_data/dev.es --dev-tgt=./en_es_data/dev.en --vocab=./vocabs/vocab_soln.json --cuda --batch-size=64
 
 elif [ "$1" = "test" ]; then
     mkdir -p outputs
