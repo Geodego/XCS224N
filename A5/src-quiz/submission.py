@@ -50,6 +50,7 @@ def multiple_choice_3():
   # `return ['a', 'd']`
   response = []
   ### START CODE HERE ###
+  response = ['a', 'b', 'c']
   ### END CODE HERE ###
   return response
 
@@ -63,5 +64,6 @@ def multiple_choice_4():
   # `return ['a', 'd']`
   response = []
   ### START CODE HERE ###
+  response = ['a', 'b']
   ### END CODE HERE ###
   return response
